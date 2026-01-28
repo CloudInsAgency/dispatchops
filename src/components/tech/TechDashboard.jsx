@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot, orderBy, doc as firestoreDoc, getDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase';
-import { FiLogOut, FiMapPin, FiPhone, FiClock, FiCheckCircle, FiAlertCircle, FiX } from 'react-icons/fi';
+import { db, storage } from '../../config/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { FiLogOut, FiMapPin, FiPhone, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiCamera, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
@@ -14,6 +15,13 @@ const TechDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
   const [companyName, setCompanyName] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [techNotes, setTechNotes] = useState('');
+  const [signature, setSignature] = useState(null);
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchCompanyName = async () => {
@@ -62,13 +70,229 @@ const TechDashboard = () => {
     return () => unsubscribe();
   }, [userProfile]);
 
+  // Reset form when job selection changes
+  useEffect(() => {
+    if (selectedJob) {
+      setPhotos(selectedJob.photos || []);
+      setTechNotes(selectedJob.techNotes || '');
+      setSignature(selectedJob.signature || null);
+    }
+  }, [selectedJob]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/tech');
   };
 
+  // Compress image before upload
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Max dimension 1920px
+          const maxDim = 1920;
+          if (width > height && width > maxDim) {
+            height = (height / width) * maxDim;
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = (width / height) * maxDim;
+            height = maxDim;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          }, 'image/jpeg', 0.85); // 85% quality
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    if (photos.length + files.length > 5) {
+      toast.error('Maximum 5 photos allowed per job');
+      return;
+    }
+
+    setUploading(true);
+    const loadingToast = toast.loading('Uploading photos...');
+
+    try {
+      const uploadedUrls = [];
+      
+      for (const file of files) {
+        // Compress image
+        const compressedFile = await compressImage(file);
+        
+        // Upload to Firebase Storage
+        const storageRef = ref(storage, `jobs/${selectedJob.id}/${Date.now()}_${file.name}`);
+        await uploadBytes(storageRef, compressedFile);
+        const url = await getDownloadURL(storageRef);
+        uploadedUrls.push(url);
+      }
+
+      const newPhotos = [...photos, ...uploadedUrls];
+      setPhotos(newPhotos);
+
+      // Update Firestore
+      const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
+      await updateDoc(jobRef, {
+        photos: newPhotos,
+        updatedAt: new Date()
+      });
+
+      toast.success('Photos uploaded!', { id: loadingToast });
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast.error('Failed to upload photos', { id: loadingToast });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeletePhoto = async (photoUrl) => {
+    const newPhotos = photos.filter(p => p !== photoUrl);
+    setPhotos(newPhotos);
+
+    try {
+      const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
+      await updateDoc(jobRef, {
+        photos: newPhotos,
+        updatedAt: new Date()
+      });
+      toast.success('Photo deleted');
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      toast.error('Failed to delete photo');
+    }
+  };
+
+  // Signature Canvas handlers - FIXED coordinate calculation
+  const startDrawing = (e) => {
+    e.preventDefault();
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  };
+
+  const stopDrawing = (e) => {
+    e.preventDefault();
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignature(null);
+  };
+
+  const saveSignature = async () => {
+    const canvas = canvasRef.current;
+    const signatureDataUrl = canvas.toDataURL();
+    
+    try {
+      // Upload signature to storage
+      const blob = await (await fetch(signatureDataUrl)).blob();
+      const storageRef = ref(storage, `signatures/${selectedJob.id}/${Date.now()}.png`);
+      await uploadBytes(storageRef, blob);
+      const url = await getDownloadURL(storageRef);
+      
+      setSignature(url);
+      
+      // Update Firestore
+      const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
+      await updateDoc(jobRef, {
+        signature: url,
+        updatedAt: new Date()
+      });
+      
+      toast.success('Signature saved!');
+    } catch (error) {
+      console.error('Error saving signature:', error);
+      toast.error('Failed to save signature');
+    }
+  };
+
+  const saveTechNotes = async () => {
+    if (!techNotes.trim()) {
+      toast.error('Please enter notes');
+      return;
+    }
+
+    try {
+      const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
+      await updateDoc(jobRef, {
+        techNotes: techNotes,
+        updatedAt: new Date()
+      });
+      toast.success('Notes saved!');
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      toast.error('Failed to save notes');
+    }
+  };
+
   const updateJobStatus = async (jobId, newStatus) => {
     if (!userProfile?.companyId) return;
+
+    // Validation for completion
+    if (newStatus === 'completed') {
+      if (photos.length === 0) {
+        toast.error('Please upload at least one photo before completing');
+        return;
+      }
+      if (!signature) {
+        toast.error('Please capture customer signature before completing');
+        return;
+      }
+      if (!techNotes.trim()) {
+        toast.error('Please add technician notes before completing');
+        return;
+      }
+    }
 
     const loadingToast = toast.loading('Updating status...');
     
@@ -79,6 +303,7 @@ const TechDashboard = () => {
       await updateDoc(jobRef, {
         status: newStatus,
         updatedAt: new Date(),
+        completedAt: newStatus === 'completed' ? new Date() : null,
         activityLog: arrayUnion({
           type: 'status_changed',
           field: 'status',
@@ -91,6 +316,11 @@ const TechDashboard = () => {
       
       toast.success('Status updated!', { id: loadingToast });
       setSelectedJob(null);
+      
+      // Reset form
+      setPhotos([]);
+      setTechNotes('');
+      setSignature(null);
     } catch (error) {
       console.error('Error updating status:', error);
       toast.error('Failed to update status', { id: loadingToast });
@@ -201,6 +431,8 @@ const TechDashboard = () => {
                   <FiX className="h-6 w-6" />
                 </button>
               </div>
+
+              {/* Job Details */}
               <div className="space-y-4 mb-6">
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Address</p>
@@ -225,11 +457,115 @@ const TechDashboard = () => {
                 </div>
                 {selectedJob.notes && (
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Notes</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Job Notes</p>
                     <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{selectedJob.notes}</p>
                   </div>
                 )}
               </div>
+
+              {/* Photo Upload Section */}
+              <div className="mb-6">
+                <p className="text-sm font-medium text-gray-700 mb-3">📸 Job Photos {photos.length > 0 && `(${photos.length}/5)`}</p>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  {photos.map((photoUrl, index) => (
+                    <div key={index} className="relative">
+                      <img src={photoUrl} alt={`Job photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                      <button
+                        onClick={() => handleDeletePhoto(photoUrl)}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"
+                      >
+                        <FiTrash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {photos.length < 5 && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      capture="environment"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full bg-gray-100 border-2 border-dashed border-gray-300 text-gray-600 py-3 rounded-lg font-medium hover:bg-gray-200 transition flex items-center justify-center gap-2"
+                    >
+                      <FiCamera className="h-5 w-5" />
+                      {uploading ? 'Uploading...' : 'Take/Upload Photo'}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Tech Notes */}
+              <div className="mb-6">
+                <p className="text-sm font-medium text-gray-700 mb-2">📝 Technician Notes</p>
+                <textarea
+                  value={techNotes}
+                  onChange={(e) => setTechNotes(e.target.value)}
+                  placeholder="Add notes about the job, work performed, parts used, etc."
+                  className="w-full border border-gray-300 rounded-lg p-3 min-h-[100px] focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                <button
+                  onClick={saveTechNotes}
+                  className="mt-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+                >
+                  Save Notes
+                </button>
+              </div>
+
+              {/* Digital Signature */}
+              <div className="mb-6">
+                <p className="text-sm font-medium text-gray-700 mb-2">✍️ Customer Signature</p>
+                {signature ? (
+                  <div className="relative">
+                    <img src={signature} alt="Customer signature" className="w-full border-2 border-gray-300 rounded-lg" />
+                    <button
+                      onClick={clearSignature}
+                      className="mt-2 text-red-600 text-sm font-medium"
+                    >
+                      Clear & Re-sign
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <canvas
+                      ref={canvasRef}
+                      width={300}
+                      height={150}
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                      className="w-full border-2 border-gray-300 rounded-lg touch-none cursor-crosshair bg-white"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={clearSignature}
+                        className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={saveSignature}
+                        className="flex-1 bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition"
+                      >
+                        Save Signature
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Status Update Buttons */}
               <div className="space-y-3">
                 <p className="text-sm font-medium text-gray-700 mb-3">Update Status:</p>
                 {selectedJob.status === 'scheduled' && (
