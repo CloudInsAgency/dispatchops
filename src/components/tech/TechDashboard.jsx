@@ -22,6 +22,7 @@ const TechDashboard = () => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const fileInputRef = useRef(null);
+  const [activeTab, setActiveTab] = useState('active'); // 'active', 'completed', 'all'
 
   useEffect(() => {
     const fetchCompanyName = async () => {
@@ -59,8 +60,8 @@ const TechDashboard = () => {
         ...doc.data()
       }));
       
-      const activeJobs = jobsData.filter(job => job.status !== 'completed');
-      setJobs(activeJobs);
+      // Load all jobs - filtering happens in render based on active tab
+      setJobs(jobsData);
       setLoading(false);
     }, (error) => {
       console.error('Error fetching jobs:', error);
@@ -343,6 +344,7 @@ const TechDashboard = () => {
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800';
       case 'in_progress': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -382,43 +384,107 @@ const TechDashboard = () => {
         </div>
       </header>
 
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-200 sticky top-[72px] z-10">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`flex-1 py-4 text-center font-medium transition ${
+              activeTab === 'active'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Active
+          </button>
+          <button
+            onClick={() => setActiveTab('completed')}
+            className={`flex-1 py-4 text-center font-medium transition ${
+              activeTab === 'completed'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Completed
+          </button>
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`flex-1 py-4 text-center font-medium transition ${
+              activeTab === 'all'
+                ? 'text-primary-600 border-b-2 border-primary-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            All
+          </button>
+        </div>
+      </div>
+
       <div className="p-4 space-y-4 pb-20">
-        {jobs.length === 0 ? (
-          <div className="text-center py-12">
-            <FiCheckCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg">No active jobs</p>
-            <p className="text-gray-400 text-sm mt-2">You are all caught up!</p>
-          </div>
-        ) : (
-          jobs.map(job => (
-            <div key={job.id} onClick={() => setSelectedJob(job)} className={`bg-white rounded-lg shadow-md p-4 ${getPriorityBorder(job.priority)} cursor-pointer active:scale-98 transition`}>
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-bold text-gray-900">{job.customerName}</h3>
-                {job.priority === 'high' && <FiAlertCircle className="h-5 w-5 text-red-500" />}
-              </div>
-              <div className="flex items-start text-gray-700 mb-2">
-                <FiMapPin className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                <span>{job.address}</span>
-              </div>
-              <div className="flex items-center text-gray-700 mb-2">
-                <FiPhone className="h-5 w-5 mr-2" />
-                <a href={`tel:${job.customerPhone}`} className="text-primary-600 font-medium" onClick={(e) => e.stopPropagation()}>
-                  {job.customerPhone}
-                </a>
-              </div>
-              <div className="flex items-center text-gray-700 mb-3">
-                <FiClock className="h-5 w-5 mr-2" />
-                <span className="font-medium">{formatDateTime(job.scheduledDateTime)}</span>
-              </div>
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <span className="text-sm font-medium text-gray-500 uppercase">{job.jobType}</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(job.status)}`}>
-                  {job.status.replace('_', ' ').toUpperCase()}
-                </span>
-              </div>
+        {(() => {
+          // Filter jobs based on active tab
+          let filteredJobs = jobs;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (activeTab === 'active') {
+            filteredJobs = jobs.filter(job => job.status !== 'completed');
+          } else if (activeTab === 'completed') {
+            filteredJobs = jobs.filter(job => {
+              if (job.status !== 'completed') return false;
+              if (!job.completedAt) return false;
+              const completedDate = new Date(job.completedAt.seconds * 1000);
+              completedDate.setHours(0, 0, 0, 0);
+              return completedDate.getTime() === today.getTime();
+            });
+          }
+          // 'all' shows everything
+
+          return filteredJobs.length === 0 ? (
+            <div className="text-center py-12">
+              <FiCheckCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600 text-lg">
+                {activeTab === 'active' && 'No active jobs'}
+                {activeTab === 'completed' && 'No completed jobs today'}
+                {activeTab === 'all' && 'No jobs'}
+              </p>
+              <p className="text-gray-400 text-sm mt-2">
+                {activeTab === 'active' && 'You are all caught up!'}
+                {activeTab === 'completed' && 'Complete some jobs to see them here'}
+                {activeTab === 'all' && 'No jobs assigned yet'}
+              </p>
             </div>
-          ))
-        )}
+          ) : (
+            filteredJobs.map(job => (
+              <div key={job.id} onClick={() => setSelectedJob(job)} className={`bg-white rounded-lg shadow-md p-4 ${getPriorityBorder(job.priority)} cursor-pointer active:scale-98 transition`}>
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-lg font-bold text-gray-900">{job.customerName}</h3>
+                  {job.priority === 'high' && <FiAlertCircle className="h-5 w-5 text-red-500" />}
+                </div>
+                <div className="flex items-start text-gray-700 mb-2">
+                  <FiMapPin className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>{job.address}</span>
+                </div>
+                <div className="flex items-center text-gray-700 mb-2">
+                  <FiPhone className="h-5 w-5 mr-2" />
+                  <a href={`tel:${job.customerPhone}`} className="text-primary-600 font-medium" onClick={(e) => e.stopPropagation()}>
+                    {job.customerPhone}
+                  </a>
+                </div>
+                <div className="flex items-center text-gray-700 mb-3">
+                  <FiClock className="h-5 w-5 mr-2" />
+                  <span className="font-medium">{formatDateTime(job.scheduledDateTime)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <span className="text-sm font-medium text-gray-500 uppercase">{job.jobType}</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(job.status)}`}>
+                    {job.status.replace('_', ' ').toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            ))
+          );
+        })()}
       </div>
 
       {selectedJob && (
