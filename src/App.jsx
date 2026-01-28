@@ -10,6 +10,7 @@ import Dashboard from './components/dashboard/Dashboard';
 import TechLogin from './components/tech/TechLogin';
 import TechDashboard from './components/tech/TechDashboard';
 import DispatchDashboard from './components/dispatch/DispatchDashboard';
+import TechniciansPage from './components/dispatch/TechniciansPage';
 
 function App() {
   return (
@@ -37,6 +38,14 @@ function App() {
           element={
             <ProtectedRoute>
               <DispatchDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dispatch/technicians"
+          element={
+            <ProtectedRoute>
+              <TechniciansPage />
             </ProtectedRoute>
           }
         />
