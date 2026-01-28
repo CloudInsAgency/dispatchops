@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
-import { Clock, Users, CheckCircle, AlertCircle, Plus, Search, Filter } from 'lucide-react';
+import { Clock, Users, CheckCircle, AlertCircle, Plus, Search, Filter, Truck, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import CreateJobModal from './CreateJobModal';
 import EditJobModal from './EditJobModal';
 import AssignTechModal from './AssignTechModal';
 
 const DispatchDashboard = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,11 @@ const DispatchDashboard = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   // Load jobs
   useEffect(() => {
@@ -139,7 +146,27 @@ const DispatchDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header with Logo */}
+      <nav className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-8 w-8" />
+              <Truck className="h-6 w-6 text-blue-600 ml-2" />
+              <span className="ml-2 text-2xl font-bold text-gray-900">Cloud Dispatch Ops</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center text-gray-700 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100"
+            >
+              <LogOut className="mr-2 h-5 w-5" />
+              Logout
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Page Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">

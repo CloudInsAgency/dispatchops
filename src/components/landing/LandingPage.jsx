@@ -11,8 +11,9 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <FiTruck className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">DispatchOps</span>
+              <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-10 w-10" />
+              <FiTruck className="h-8 w-8 text-primary-600 ml-2" />
+              <span className="ml-2 text-2xl font-bold text-gray-900">Cloud Dispatch Ops</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-700 hover:text-primary-600">Features</a>
@@ -237,8 +238,9 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <FiTruck className="h-8 w-8" />
-                <span className="ml-2 text-xl font-bold">DispatchOps</span>
+                <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-8 w-8" />
+                <FiTruck className="h-6 w-6 ml-2" />
+                <span className="ml-2 text-xl font-bold">Cloud Dispatch Ops</span>
               </div>
               <p className="text-gray-400">
                 Dispatch software built by dispatch managers.
@@ -270,7 +272,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2026 DispatchOps. All rights reserved.</p>
+            <p>&copy; 2026 Cloud Dispatch Ops. All rights reserved.</p>
           </div>
         </div>
       </footer>

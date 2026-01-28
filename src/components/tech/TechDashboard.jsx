@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot, orderBy, doc as firestoreDoc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FiLogOut, FiMapPin, FiPhone, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiCamera, FiTrash2 } from 'react-icons/fi';
+import { FiLogOut, FiMapPin, FiPhone, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiCamera, FiTrash2, FiTruck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
@@ -371,10 +371,14 @@ const TechDashboard = () => {
       <header className="bg-primary-600 text-white sticky top-0 z-10 shadow-lg">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">My Jobs</h1>
-              <p className="text-sm text-primary-100">{userProfile?.fullName || 'Technician'}</p>
-              {companyName && <p className="text-xs text-primary-200 mt-0.5">{companyName}</p>}
+            <div className="flex items-center">
+              <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-8 w-8 mr-2" />
+              <FiTruck className="h-6 w-6 mr-2" />
+              <div>
+                <h1 className="text-xl font-bold">Cloud Dispatch Ops</h1>
+                <p className="text-xs text-primary-100">{userProfile?.fullName || 'Technician'}</p>
+                {companyName && <p className="text-xs text-primary-200 mt-0.5">{companyName}</p>}
+              </div>
             </div>
             <button onClick={handleLogout} className="flex items-center bg-primary-700 px-4 py-2 rounded-lg hover:bg-primary-800 transition">
               <FiLogOut className="mr-2" />

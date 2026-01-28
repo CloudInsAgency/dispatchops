@@ -61,8 +61,9 @@ const LoginPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center">
-              <FiTruck className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">DispatchOps</span>
+              <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-8 w-8" />
+              <FiTruck className="h-6 w-6 text-primary-600 ml-2" />
+              <span className="ml-2 text-2xl font-bold text-gray-900">Cloud Dispatch Ops</span>
             </Link>
             <Link to="/" className="text-gray-600 hover:text-gray-900 flex items-center">
               <FiArrowLeft className="mr-2" />
@@ -77,7 +78,7 @@ const LoginPage = () => {
         <div className="max-w-md w-full">
           <div className="bg-white shadow-xl rounded-lg p-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-            <p className="text-gray-600 mb-8">Sign in to your DispatchOps account</p>
+            <p className="text-gray-600 mb-8">Sign in to your Cloud Dispatch Ops account</p>
 
             {error && (
               <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">

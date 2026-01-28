@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiTruck, FiArrowLeft } from 'react-icons/fi';
+import { FiArrowLeft, FiTruck } from 'react-icons/fi';
 import { PRICING_TIERS } from '../../config/config';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -94,8 +94,9 @@ const SignupPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center">
-              <FiTruck className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900">DispatchOps</span>
+              <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-8 w-8" />
+              <FiTruck className="h-6 w-6 text-primary-600 ml-2" />
+              <span className="ml-2 text-2xl font-bold text-gray-900">Cloud Dispatch Ops</span>
             </Link>
             <Link to="/" className="text-gray-600 hover:text-gray-900 flex items-center">
               <FiArrowLeft className="mr-2" />
