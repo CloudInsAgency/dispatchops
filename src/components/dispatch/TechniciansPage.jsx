@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheckCircle, FiClock } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheckCircle, FiClock, FiTruck, FiLogOut } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const TechniciansPage = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -17,6 +19,11 @@ const TechniciansPage = () => {
     phone: '',
     status: 'active'
   });
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   // Load techs
   useEffect(() => {
@@ -147,6 +154,26 @@ const TechniciansPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navigation Header */}
+      <nav className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-8 w-8" />
+              <FiTruck className="h-6 w-6 text-primary-600 ml-2" />
+              <span className="ml-2 text-2xl font-bold text-gray-900">Cloud Dispatch Ops</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center text-gray-700 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100"
+            >
+              <FiLogOut className="mr-2 h-5 w-5" />
+              Logout
+            </button>
+          </div>
+        </div>
+      </nav>
+
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
