@@ -9,10 +9,17 @@ export const usePlanLimits = (userProfile) => {
   const [currentPlan, setCurrentPlan] = useState('starter');
 
   useEffect(() => {
-    if (!userProfile?.companyId) return;
+    console.log('🔍 usePlanLimits - userProfile:', userProfile);
+    
+    if (!userProfile?.companyId) {
+      console.log('❌ No companyId found');
+      return;
+    }
 
     // Get current plan from user profile
     const plan = userProfile?.subscription?.plan || 'starter';
+    console.log('📋 Current plan:', plan);
+    console.log('📋 Full subscription object:', userProfile?.subscription);
     setCurrentPlan(plan);
 
     // Listen to tech count
@@ -25,8 +32,13 @@ export const usePlanLimits = (userProfile) => {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const count = snapshot.size;
+      console.log('👥 Tech count:', count);
+      
+      const canAdd = canAddTechnician(plan, count);
+      console.log('✅ Can add tech?', canAdd, 'Plan:', plan, 'Count:', count);
+      
       setTechCount(count);
-      setCanAddTech(canAddTechnician(plan, count));
+      setCanAddTech(canAdd);
     });
 
     return () => unsubscribe();
