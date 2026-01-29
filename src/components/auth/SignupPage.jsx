@@ -58,8 +58,22 @@ const SignupPage = () => {
     setError('');
 
     try {
+      // Add subscription data to formData - ALL NEW USERS GET STARTER PLAN BY DEFAULT
+      const signupData = {
+        ...formData,
+        subscription: {
+          plan: 'starter',
+          techLimit: 10,
+          jobLimit: 100,
+          status: 'active',
+          stripeCustomerId: '',
+          stripeSubscriptionId: '',
+          createdAt: new Date().toISOString()
+        }
+      };
+      
       // Create user with Firebase Auth and Firestore
-      await signup(formData.email, formData.password, formData);
+      await signup(formData.email, formData.password, signupData);
       
       // After successful signup, redirect to onboarding
       navigate('/onboarding');
