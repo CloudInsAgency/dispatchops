@@ -59,22 +59,12 @@ const TechniciansPage = () => {
   }, [userProfile]);
 
   const handleAddTech = () => {
-    // Debug logging
-    console.log('🚀 handleAddTech clicked!');
-    console.log('📊 canAddTech:', canAddTech);
-    console.log('📋 currentPlan:', currentPlan);
-    console.log('📋 planDetails:', planDetails);
-    console.log('👤 userProfile subscription:', userProfile?.subscription);
-    console.log('👥 Current techs count:', techs.length);
-    
     // Check plan limits
     if (!canAddTech) {
-      console.log('❌ Limit reached! Showing upgrade modal');
       setShowUpgradeModal(true);
       return;
     }
 
-    console.log('✅ Can add tech, opening form');
     setEditingTech(null);
     setFormData({
       fullName: '',
