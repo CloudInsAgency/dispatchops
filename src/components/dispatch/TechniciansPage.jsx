@@ -5,10 +5,14 @@ import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc
 import { db } from '../../config/firebase';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheckCircle, FiClock, FiTruck, FiLogOut } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { usePlanLimits } from '../../hooks/usePlanLimits';
+import UpgradeModal from '../subscription/UpgradeModal';
 
 const TechniciansPage = () => {
   const { userProfile, logout } = useAuth();
   const navigate = useNavigate();
+  const { canAddTech, currentPlan, planDetails } = usePlanLimits(userProfile);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -55,6 +59,12 @@ const TechniciansPage = () => {
   }, [userProfile]);
 
   const handleAddTech = () => {
+    // Check plan limits
+    if (!canAddTech) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setEditingTech(null);
     setFormData({
       fullName: '',
@@ -396,6 +406,14 @@ const TechniciansPage = () => {
           </div>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={currentPlan}
+        reason={`You've reached your plan limit of ${planDetails?.techLimit || 10} technicians. Upgrade to add more technicians.`}
+      />
     </div>
   );
 };
