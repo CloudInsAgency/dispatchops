@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { canAddTechnician, getPlanById } from '../config/stripe';
+import { canAddTechnician, canCreateJob, getPlanById } from '../config/stripe';
 
 export const usePlanLimits = (userProfile) => {
   const [techCount, setTechCount] = useState(0);
+  const [monthlyJobCount, setMonthlyJobCount] = useState(0);
   const [canAddTech, setCanAddTech] = useState(true);
+  const [canAddJob, setCanAddJob] = useState(true);
   const [currentPlan, setCurrentPlan] = useState('starter');
 
   useEffect(() => {
@@ -14,16 +16,15 @@ export const usePlanLimits = (userProfile) => {
     const plan = userProfile?.subscription?.plan || 'starter';
     setCurrentPlan(plan);
 
+    // --- Technician counting (dual collection) ---
     let usersCount = 0;
     let subCount = 0;
-    const updateLimits = () => {
+    const updateTechLimits = () => {
       const total = Math.max(usersCount, subCount);
-      const canAdd = canAddTechnician(plan, total);
       setTechCount(total);
-      setCanAddTech(canAdd);
+      setCanAddTech(canAddTechnician(plan, total));
     };
 
-    // Listen to techs in users collection
     const usersRef = collection(db, 'users');
     const usersQ = query(
       usersRef,
@@ -32,22 +33,39 @@ export const usePlanLimits = (userProfile) => {
     );
     const unsub1 = onSnapshot(usersQ, (snapshot) => {
       usersCount = snapshot.size;
-      updateLimits();
+      updateTechLimits();
     });
 
-    // Listen to techs in companies subcollection
     const subRef = collection(db, 'companies', userProfile.companyId, 'technicians');
     const unsub2 = onSnapshot(subRef, (snapshot) => {
       subCount = snapshot.size;
-      updateLimits();
+      updateTechLimits();
     });
 
-    return () => { unsub1(); unsub2(); };
+    // --- Monthly job counting ---
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthStart = Timestamp.fromDate(firstOfMonth);
+
+    const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+    const jobsQ = query(
+      jobsRef,
+      where('createdAt', '>=', monthStart)
+    );
+    const unsub3 = onSnapshot(jobsQ, (snapshot) => {
+      const count = snapshot.size;
+      setMonthlyJobCount(count);
+      setCanAddJob(canCreateJob(plan, count));
+    });
+
+    return () => { unsub1(); unsub2(); unsub3(); };
   }, [userProfile]);
 
   return {
     techCount,
+    monthlyJobCount,
     canAddTech,
+    canAddJob,
     currentPlan,
     planDetails: getPlanById(currentPlan)
   };

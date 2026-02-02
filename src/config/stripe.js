@@ -9,9 +9,10 @@ export const PLANS = {
     price: 149.95,
     priceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID,
     techLimit: 10,
+    jobLimit: 200,
     features: [
       'Up to 10 technicians',
-      'Unlimited jobs',
+      'Up to 200 jobs/month',
       'Real-time dispatch board',
       'Mobile app for technicians',
       'Basic reporting',
@@ -24,8 +25,10 @@ export const PLANS = {
     price: 199.95,
     priceId: import.meta.env.VITE_STRIPE_GROWTH_PRICE_ID,
     techLimit: 20,
+    jobLimit: 400,
     features: [
       'Up to 20 technicians',
+      'Up to 400 jobs/month',
       'Everything in Starter',
       'Advanced reporting',
       'Priority email support',
@@ -39,8 +42,10 @@ export const PLANS = {
     price: 275,
     priceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID,
     techLimit: 40,
+    jobLimit: 800,
     features: [
       'Up to 40 technicians',
+      'Up to 800 jobs/month',
       'Everything in Growth',
       'API access',
       'Phone support',
@@ -57,6 +62,11 @@ export const getPlanById = (planId) => {
 export const canAddTechnician = (currentPlan, currentTechCount) => {
   const plan = getPlanById(currentPlan);
   return currentTechCount < plan.techLimit;
+};
+
+export const canCreateJob = (currentPlan, currentMonthJobCount) => {
+  const plan = getPlanById(currentPlan);
+  return currentMonthJobCount < plan.jobLimit;
 };
 
 export const getRecommendedUpgrade = (currentPlan) => {
