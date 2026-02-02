@@ -1,9 +1,7 @@
 import { loadStripe } from '@stripe/stripe-js';
 
-// Initialize Stripe with publishable key
 export const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-// Plan configuration
 export const PLANS = {
   starter: {
     id: 'starter',
@@ -40,9 +38,9 @@ export const PLANS = {
     name: 'Professional Plan',
     price: 275,
     priceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID,
-    techLimit: null, // unlimited
+    techLimit: 40,
     features: [
-      'Unlimited technicians',
+      'Up to 40 technicians',
       'Everything in Growth',
       'API access',
       'Phone support',
@@ -52,25 +50,17 @@ export const PLANS = {
   }
 };
 
-// Helper function to get plan by ID
 export const getPlanById = (planId) => {
   return PLANS[planId] || PLANS.starter;
 };
 
-// Helper function to check if user can add more techs
 export const canAddTechnician = (currentPlan, currentTechCount) => {
   const plan = getPlanById(currentPlan);
-  
-  // Professional has unlimited techs
-  if (plan.techLimit === null) return true;
-  
-  // Check if under limit
   return currentTechCount < plan.techLimit;
 };
 
-// Helper function to get recommended upgrade plan
 export const getRecommendedUpgrade = (currentPlan) => {
   if (currentPlan === 'starter') return 'growth';
   if (currentPlan === 'growth') return 'professional';
-  return null; // Already on highest plan
+  return null;
 };
