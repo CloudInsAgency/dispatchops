@@ -13,10 +13,19 @@ const StatsCards = () => {
     onTimeRate: '--'
   });
 
+  // Live tech count from subcollection
   useEffect(() => {
     if (!userProfile?.companyId) return;
+    const techRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+    const unsubscribe = onSnapshot(techRef, (snapshot) => {
+      setStats(prev => ({ ...prev, activeTechnicians: snapshot.size }));
+    });
+    return () => unsubscribe();
+  }, [userProfile?.companyId]);
 
-    // Fetch jobs for stats
+  // Job stats
+  useEffect(() => {
+    if (!userProfile?.companyId) return;
     const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
     const jobsQuery = query(jobsRef);
 
@@ -28,7 +37,6 @@ const StatsCards = () => {
       const startOfWeek = new Date(today);
       startOfWeek.setDate(startOfWeek.getDate() - today.getDay());
 
-      // Calculate stats
       const jobsToday = jobs.filter(job => {
         if (!job.createdAt) return false;
         const createdDate = job.createdAt.toDate ? job.createdAt.toDate() : new Date(job.createdAt);
@@ -41,30 +49,28 @@ const StatsCards = () => {
         return updatedDate >= startOfWeek;
       }).length;
 
-      // Calculate on-time rate (jobs completed on or before scheduled time)
       const completedJobs = jobs.filter(job => job.status === 'completed' && job.scheduledDateTime);
       const onTimeJobs = completedJobs.filter(job => {
         const scheduledDate = new Date(job.scheduledDateTime);
         const completedDate = job.updatedAt?.toDate ? job.updatedAt.toDate() : new Date(job.updatedAt);
-        // Consider on-time if completed within 2 hours of scheduled time
         const timeDiff = completedDate - scheduledDate;
-        return timeDiff <= 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+        return timeDiff <= 2 * 60 * 60 * 1000;
       }).length;
 
       const onTimeRate = completedJobs.length > 0 
         ? Math.round((onTimeJobs / completedJobs.length) * 100) 
         : '--';
 
-      setStats({
+      setStats(prev => ({
+        ...prev,
         totalJobsToday: jobsToday,
-        activeTechnicians: userProfile?.company?.technicianCount || 0,
         completedThisWeek: completedThisWeek,
         onTimeRate: onTimeRate !== '--' ? `${onTimeRate}%` : '--'
-      });
+      }));
     });
 
     return () => unsubscribe();
-  }, [userProfile]);
+  }, [userProfile?.companyId]);
 
   return (
     <div className="grid md:grid-cols-4 gap-6 mb-6">
