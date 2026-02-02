@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlanLimits } from '../../hooks/usePlanLimits';
-import { 
-  FiTruck, FiLogOut, FiMenu, FiX, FiGrid, FiUsers, 
-  FiSettings, FiCreditCard
-} from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiX, FiGrid, FiUsers, FiSettings, FiCreditCard } from 'react-icons/fi';
 
 const AppShell = ({ children }) => {
   const { userProfile, logout } = useAuth();
@@ -37,9 +34,7 @@ const AppShell = ({ children }) => {
       to={to}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-          isActive
-            ? 'bg-primary-600 text-white'
-            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+          isActive ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
         }`
       }
       onClick={() => setMobileMenuOpen(false)}
@@ -51,29 +46,16 @@ const AppShell = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Desktop Sidebar */}
-      <aside
-        className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
-          sidebarOpen ? 'w-64' : 'w-20'
-        }`}
-      >
-        {/* Logo */}
+      <aside className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-8 w-8" />
-            {sidebarOpen && (
-              <span className="text-lg font-bold text-gray-900">Dispatch Ops</span>
-            )}
+            {sidebarOpen && <span className="text-lg font-bold text-gray-900">Dispatch Ops</span>}
           </div>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-gray-600">
             {sidebarOpen ? <FiX className="h-5 w-5" /> : <FiMenu className="h-5 w-5" />}
           </button>
         </div>
-
-        {/* Company Info */}
         {sidebarOpen && (
           <div className="p-4 border-b border-gray-200">
             <p className="text-sm font-medium text-gray-900 truncate">{companyName}</p>
@@ -90,61 +72,38 @@ const AppShell = ({ children }) => {
             </div>
           </div>
         )}
-
-        {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => (
-            <NavItem key={item.to} {...item} />
-          ))}
+          {navItems.map((item) => (<NavItem key={item.to} {...item} />))}
         </nav>
-
-        {/* Logout */}
         <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition"
-          >
+          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 w-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition">
             <FiLogOut className="h-5 w-5" />
             {sidebarOpen && <span className="font-medium">Logout</span>}
           </button>
         </div>
       </aside>
-
-      {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-30">
         <div className="flex items-center justify-between px-4 h-16">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="Cloud Dispatch Ops" className="h-8 w-8" />
             <span className="text-lg font-bold text-gray-900">Dispatch Ops</span>
           </div>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-gray-600 hover:text-gray-900"
-          >
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-600 hover:text-gray-900">
             {mobileMenuOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
           </button>
         </div>
       </div>
-
-      {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg">
             <div className="p-4 border-b border-gray-200">
               <p className="text-sm font-medium text-gray-900">{companyName}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                {planDetails?.name} — {techCount}/{planDetails?.techLimit} techs, {monthlyJobCount}/{planDetails?.jobLimit} jobs
-              </p>
+              <p className="text-xs text-gray-500 mt-1">{planDetails?.name} — {techCount}/{planDetails?.techLimit} techs</p>
             </div>
             <nav className="p-4 space-y-2">
-              {navItems.map((item) => (
-                <NavItem key={item.to} {...item} />
-              ))}
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 px-4 py-3 w-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition"
-              >
+              {navItems.map((item) => (<NavItem key={item.to} {...item} />))}
+              <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 w-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition">
                 <FiLogOut className="h-5 w-5" />
                 <span className="font-medium">Logout</span>
               </button>
@@ -152,8 +111,6 @@ const AppShell = ({ children }) => {
           </div>
         </div>
       )}
-
-      {/* Main Content */}
       <main className="flex-1 md:overflow-auto">
         <div className="md:hidden h-16" />
         {children}
