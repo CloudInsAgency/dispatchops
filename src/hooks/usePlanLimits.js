@@ -9,39 +9,40 @@ export const usePlanLimits = (userProfile) => {
   const [currentPlan, setCurrentPlan] = useState('starter');
 
   useEffect(() => {
-    console.log('🔍 usePlanLimits - userProfile:', userProfile);
-    
-    if (!userProfile?.companyId) {
-      console.log('❌ No companyId found');
-      return;
-    }
+    if (!userProfile?.companyId) return;
 
-    // Get current plan from user profile
     const plan = userProfile?.subscription?.plan || 'starter';
-    console.log('📋 Current plan:', plan);
-    console.log('📋 Full subscription object:', userProfile?.subscription);
     setCurrentPlan(plan);
 
-    // Listen to tech count
-    const techsRef = collection(db, 'users');
-    const q = query(
-      techsRef,
+    let usersCount = 0;
+    let subCount = 0;
+    const updateLimits = () => {
+      const total = Math.max(usersCount, subCount);
+      const canAdd = canAddTechnician(plan, total);
+      setTechCount(total);
+      setCanAddTech(canAdd);
+    };
+
+    // Listen to techs in users collection
+    const usersRef = collection(db, 'users');
+    const usersQ = query(
+      usersRef,
       where('companyId', '==', userProfile.companyId),
       where('role', '==', 'tech')
     );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const count = snapshot.size;
-      console.log('👥 Tech count:', count);
-      
-      const canAdd = canAddTechnician(plan, count);
-      console.log('✅ Can add tech?', canAdd, 'Plan:', plan, 'Count:', count);
-      
-      setTechCount(count);
-      setCanAddTech(canAdd);
+    const unsub1 = onSnapshot(usersQ, (snapshot) => {
+      usersCount = snapshot.size;
+      updateLimits();
     });
 
-    return () => unsubscribe();
+    // Listen to techs in companies subcollection
+    const subRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+    const unsub2 = onSnapshot(subRef, (snapshot) => {
+      subCount = snapshot.size;
+      updateLimits();
+    });
+
+    return () => { unsub1(); unsub2(); };
   }, [userProfile]);
 
   return {
