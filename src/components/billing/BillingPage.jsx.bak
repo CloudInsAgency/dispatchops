@@ -1,0 +1,92 @@
+import React, { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePlanLimits } from '../../hooks/usePlanLimits';
+import { PLANS, getRecommendedUpgrade } from '../../config/stripe';
+import { FiCreditCard, FiCheck, FiArrowRight } from 'react-icons/fi';
+import UpgradeModal from '../subscription/UpgradeModal';
+
+const BillingPage = () => {
+  const { userProfile } = useAuth();
+  const { currentPlan, planDetails, techCount, monthlyJobCount } = usePlanLimits(userProfile);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const upgradePlan = getRecommendedUpgrade(currentPlan);
+
+  return (
+    <div className="p-6 max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Billing & Plans</h1>
+        <p className="text-gray-600 mt-1">Manage your subscription and billing information</p>
+      </div>
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Current Plan</h2>
+            <p className="text-3xl font-bold text-primary-600 mt-2">{planDetails?.name || 'Starter Plan'}</p>
+            <p className="text-gray-600 mt-1">${planDetails?.price || 149.95}/month</p>
+          </div>
+          {upgradePlan && (
+            <button onClick={() => setShowUpgradeModal(true)} className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition flex items-center gap-2">
+              Upgrade Plan <FiArrowRight className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-600">Technicians</span>
+              <span className="font-medium">{techCount} / {planDetails?.techLimit || 10}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="bg-primary-600 h-2 rounded-full" style={{ width: `${Math.min((techCount / (planDetails?.techLimit || 10)) * 100, 100)}%` }} />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-600">Jobs this month</span>
+              <span className="font-medium">{monthlyJobCount} / {planDetails?.jobLimit || 200}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="bg-primary-600 h-2 rounded-full" style={{ width: `${Math.min((monthlyJobCount / (planDetails?.jobLimit || 200)) * 100, 100)}%` }} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Plan Features</h2>
+        <ul className="space-y-3">
+          {planDetails?.features?.map((feature, index) => (
+            <li key={index} className="flex items-center gap-3">
+              <FiCheck className="h-5 w-5 text-green-500 flex-shrink-0" />
+              <span className="text-gray-700">{feature}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-6">Compare Plans</h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          {Object.values(PLANS).map((plan) => (
+            <div key={plan.id} className={`border-2 rounded-lg p-6 ${plan.id === currentPlan ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}>
+              <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+              <p className="text-2xl font-bold text-gray-900 mt-2">${plan.price}<span className="text-sm font-normal text-gray-500">/month</span></p>
+              <ul className="mt-4 space-y-2">
+                <li className="text-sm text-gray-600">Up to {plan.techLimit} technicians</li>
+                <li className="text-sm text-gray-600">Up to {plan.jobLimit} jobs/month</li>
+              </ul>
+              {plan.id === currentPlan ? (
+                <div className="mt-4 text-center text-sm font-medium text-primary-600">Current Plan</div>
+              ) : (
+                <button onClick={() => setShowUpgradeModal(true)} className="mt-4 w-full py-2 border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition text-sm font-medium">
+                  {PLANS[currentPlan]?.price > plan.price ? 'Downgrade' : 'Upgrade'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} currentPlan={currentPlan} reason="Upgrade your plan to unlock more features." />
+    </div>
+  );
+};
+
+export default BillingPage;
