@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePlanLimits } from '../../hooks/usePlanLimits';
-import { FiLogOut, FiMenu, FiX, FiGrid, FiUsers, FiSettings, FiCreditCard } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiX, FiGrid, FiUsers, FiSettings, FiCreditCard, FiBarChart2 } from 'react-icons/fi';
 
 const AppShell = ({ children }) => {
   const { userProfile, logout } = useAuth();
@@ -26,6 +26,7 @@ const AppShell = ({ children }) => {
     { to: '/dashboard', icon: FiGrid, label: 'Dispatch Board' },
     { to: '/technicians', icon: FiUsers, label: 'Technicians' },
     { to: '/settings', icon: FiSettings, label: 'Settings' },
+    { to: '/reports', icon: FiBarChart2, label: 'Reports' },
     { to: '/billing', icon: FiCreditCard, label: 'Billing' },
   ];
 

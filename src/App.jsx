@@ -13,6 +13,7 @@ import TechniciansPage from './components/dispatch/TechniciansPage';
 import AppShell from './components/layout/AppShell';
 import SettingsPage from './components/settings/SettingsPage';
 import BillingPage from './components/billing/BillingPage';
+import ReportsPage from './components/reports/ReportsPage';
 
 const AdminLayout = ({ children }) => (
   <ProtectedRoute>
@@ -33,6 +34,7 @@ function App() {
         <Route path="/technicians" element={<AdminLayout><TechniciansPage /></AdminLayout>} />
         <Route path="/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
         <Route path="/billing" element={<AdminLayout><BillingPage /></AdminLayout>} />
+            <Route path="/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
         <Route path="/dispatch" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dispatch/technicians" element={<Navigate to="/technicians" replace />} />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingFlow /></ProtectedRoute>} />
