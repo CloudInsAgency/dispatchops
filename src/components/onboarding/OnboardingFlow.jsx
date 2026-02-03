@@ -40,7 +40,7 @@ const OnboardingFlow = () => {
     setLoading(true);
 
     try {
-      const companyId = userProfile.companyId;
+      const companyId = userProfile?.companyId || currentUser?.uid;
       
       // Add technician to Firestore
       await addDoc(collection(db, 'companies', companyId, 'technicians'), {
@@ -71,7 +71,7 @@ const OnboardingFlow = () => {
     setLoading(true);
 
     try {
-      const companyId = userProfile.companyId;
+      const companyId = userProfile?.companyId || currentUser?.uid;
       
       // Add job to Firestore
       await addDoc(collection(db, 'companies', companyId, 'jobs'), {
