@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, onSnapshot, doc as firestoreDoc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FiLogOut, FiMapPin, FiPhone, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiCamera, FiTrash2, FiTruck } from 'react-icons/fi';
+import { FiLogOut, FiMapPin, FiPhone, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiCamera, FiTrash2, FiTruck, FiNavigation, FiPlay, FiSquare } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
@@ -22,22 +22,116 @@ const TechDashboard = () => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const fileInputRef = useRef(null);
-  const [activeTab, setActiveTab] = useState('active'); // 'active', 'completed', 'all'
+  const [activeTab, setActiveTab] = useState('active');
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const touchStartY = useRef(0);
+  const scrollContainerRef = useRef(null);
+  const PULL_THRESHOLD = 80;
+  const [activeTimers, setActiveTimers] = useState({});
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('jobTimers');
+      if (saved) setActiveTimers(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
+
+  useEffect(() => {
+    if (Object.keys(activeTimers).length > 0) {
+      localStorage.setItem('jobTimers', JSON.stringify(activeTimers));
+    }
+  }, [activeTimers]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveTimers(prev => {
+        const updated = { ...prev };
+        let changed = false;
+        Object.keys(updated).forEach(jobId => {
+          if (updated[jobId].running) {
+            updated[jobId] = { ...updated[jobId], elapsed: updated[jobId].elapsed + 1 };
+            changed = true;
+          }
+        });
+        return changed ? updated : prev;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const startTimer = (jobId) => {
+    setActiveTimers(prev => ({
+      ...prev,
+      [jobId]: { elapsed: prev[jobId]?.elapsed || 0, running: true, startedAt: new Date().toISOString() }
+    }));
+  };
+
+  const pauseTimer = (jobId) => {
+    setActiveTimers(prev => ({ ...prev, [jobId]: { ...prev[jobId], running: false } }));
+  };
+
+  const resetTimer = (jobId) => {
+    setActiveTimers(prev => {
+      const updated = { ...prev };
+      delete updated[jobId];
+      return updated;
+    });
+    try {
+      const saved = JSON.parse(localStorage.getItem('jobTimers') || '{}');
+      delete saved[jobId];
+      localStorage.setItem('jobTimers', JSON.stringify(saved));
+    } catch (e) {}
+  };
+
+  const formatTimer = (totalSeconds) => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hrs > 0) return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const handleTouchStart = useCallback((e) => {
+    const container = scrollContainerRef.current;
+    if (container && container.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+      setIsPulling(true);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isPulling) return;
+    const distance = Math.max(0, e.touches[0].clientY - touchStartY.current);
+    setPullDistance(Math.min(distance * 0.5, 120));
+  }, [isPulling]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (pullDistance >= PULL_THRESHOLD) {
+      setRefreshing(true);
+      setPullDistance(PULL_THRESHOLD);
+      setTimeout(() => {
+        setRefreshing(false);
+        setPullDistance(0);
+        toast.success('Jobs refreshed');
+      }, 1000);
+    } else {
+      setPullDistance(0);
+    }
+    setIsPulling(false);
+  }, [pullDistance]);
 
   useEffect(() => {
     const fetchCompanyName = async () => {
       if (!userProfile?.companyId) return;
-      
       try {
         const companyDoc = await getDoc(firestoreDoc(db, 'companies', userProfile.companyId));
-        if (companyDoc.exists()) {
-          setCompanyName(companyDoc.data().name || '');
-        }
+        if (companyDoc.exists()) setCompanyName(companyDoc.data().name || '');
       } catch (error) {
         console.error('Error fetching company:', error);
       }
     };
-
     fetchCompanyName();
   }, [userProfile]);
 
@@ -48,39 +142,22 @@ const TechDashboard = () => {
       setLoading(false);
       return;
     }
-
-    
     const jobsRef = collection(db, 'companies', companyId, 'jobs');
     const q = query(jobsRef);
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       console.log("DEBUG snapshot size:", snapshot.size, "companyId:", userProfile.companyId, "fullName:", userProfile.fullName, "uid:", userProfile.uid);
-      const allJobs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      
-      const myJobs = allJobs.filter(job => 
-        job.assignedToName === userProfile.fullName ||
-        job.assignedToUid === userProfile.uid
-      );
-
-      myJobs.sort((a, b) => {
-        const dateA = a.scheduledDateTime || '';
-        const dateB = b.scheduledDateTime || '';
-        return dateA.localeCompare(dateB);
-      });
-
+      const allJobs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const myJobs = allJobs.filter(job => job.assignedToName === userProfile.fullName || job.assignedToUid === userProfile.uid);
+      myJobs.sort((a, b) => (a.scheduledDateTime || '').localeCompare(b.scheduledDateTime || ''));
       setJobs(myJobs);
       setLoading(false);
     }, (error) => {
       console.error('Error fetching jobs:', error.code, error.message);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, [userProfile]);
-  // Reset form when job selection changes
+
   useEffect(() => {
     if (selectedJob) {
       setPhotos(selectedJob.photos || []);
@@ -94,7 +171,6 @@ const TechDashboard = () => {
     navigate('/tech');
   };
 
-  // Compress image before upload
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -104,25 +180,14 @@ const TechDashboard = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          
-          // Max dimension 1920px
           const maxDim = 1920;
-          if (width > height && width > maxDim) {
-            height = (height / width) * maxDim;
-            width = maxDim;
-          } else if (height > maxDim) {
-            width = (width / height) * maxDim;
-            height = maxDim;
-          }
-          
+          if (width > height && width > maxDim) { height = (height / width) * maxDim; width = maxDim; }
+          else if (height > maxDim) { width = (width / height) * maxDim; height = maxDim; }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          
-          canvas.toBlob((blob) => {
-            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-          }, 'image/jpeg', 0.85); // 85% quality
+          canvas.toBlob((blob) => { resolve(new File([blob], file.name, { type: 'image/jpeg' })); }, 'image/jpeg', 0.85);
         };
         img.src = e.target.result;
       };
@@ -133,66 +198,39 @@ const TechDashboard = () => {
   const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
-    
-    if (photos.length + files.length > 5) {
-      toast.error('Maximum 5 photos allowed per job');
-      return;
-    }
-
+    if (photos.length + files.length > 5) { toast.error('Maximum 5 photos allowed per job'); return; }
     setUploading(true);
     const loadingToast = toast.loading('Uploading photos...');
-
     try {
       const uploadedUrls = [];
-      
       for (const file of files) {
-        // Compress image
         const compressedFile = await compressImage(file);
-        
-        // Upload to Firebase Storage
         const storageRef = ref(storage, `jobs/${selectedJob.id}/${Date.now()}_${file.name}`);
         await uploadBytes(storageRef, compressedFile);
         const url = await getDownloadURL(storageRef);
         uploadedUrls.push(url);
       }
-
       const newPhotos = [...photos, ...uploadedUrls];
       setPhotos(newPhotos);
-
-      // Update Firestore
       const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
-      await updateDoc(jobRef, {
-        photos: newPhotos,
-        updatedAt: new Date()
-      });
-
+      await updateDoc(jobRef, { photos: newPhotos, updatedAt: new Date() });
       toast.success('Photos uploaded!', { id: loadingToast });
     } catch (error) {
       console.error('Error uploading photos:', error);
       toast.error('Failed to upload photos', { id: loadingToast });
-    } finally {
-      setUploading(false);
-    }
+    } finally { setUploading(false); }
   };
 
   const handleDeletePhoto = async (photoUrl) => {
     const newPhotos = photos.filter(p => p !== photoUrl);
     setPhotos(newPhotos);
-
     try {
       const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
-      await updateDoc(jobRef, {
-        photos: newPhotos,
-        updatedAt: new Date()
-      });
+      await updateDoc(jobRef, { photos: newPhotos, updatedAt: new Date() });
       toast.success('Photo deleted');
-    } catch (error) {
-      console.error('Error deleting photo:', error);
-      toast.error('Failed to delete photo');
-    }
+    } catch (error) { console.error('Error deleting photo:', error); toast.error('Failed to delete photo'); }
   };
 
-  // Signature Canvas handlers - FIXED coordinate calculation
   const startDrawing = (e) => {
     e.preventDefault();
     setIsDrawing(true);
@@ -203,10 +241,8 @@ const TechDashboard = () => {
     const scaleY = canvas.height / rect.height;
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-    const x = (clientX - rect.left) * scaleX;
-    const y = (clientY - rect.top) * scaleY;
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.moveTo((clientX - rect.left) * scaleX, (clientY - rect.top) * scaleY);
   };
 
   const draw = (e) => {
@@ -219,142 +255,104 @@ const TechDashboard = () => {
     const scaleY = canvas.height / rect.height;
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-    const x = (clientX - rect.left) * scaleX;
-    const y = (clientY - rect.top) * scaleY;
-    ctx.lineTo(x, y);
+    ctx.lineTo((clientX - rect.left) * scaleX, (clientY - rect.top) * scaleY);
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.stroke();
   };
 
-  const stopDrawing = (e) => {
-    e.preventDefault();
-    setIsDrawing(false);
-  };
+  const stopDrawing = (e) => { e.preventDefault(); setIsDrawing(false); };
 
   const clearSignature = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     setSignature(null);
   };
 
   const saveSignature = async () => {
     const canvas = canvasRef.current;
-    const signatureDataUrl = canvas.toDataURL();
-    
     try {
-      // Upload signature to storage
-      const blob = await (await fetch(signatureDataUrl)).blob();
+      const blob = await (await fetch(canvas.toDataURL())).blob();
       const storageRef = ref(storage, `signatures/${selectedJob.id}/${Date.now()}.png`);
       await uploadBytes(storageRef, blob);
       const url = await getDownloadURL(storageRef);
-      
       setSignature(url);
-      
-      // Update Firestore
       const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
-      await updateDoc(jobRef, {
-        signature: url,
-        updatedAt: new Date()
-      });
-      
+      await updateDoc(jobRef, { signature: url, updatedAt: new Date() });
       toast.success('Signature saved!');
-    } catch (error) {
-      console.error('Error saving signature:', error);
-      toast.error('Failed to save signature');
-    }
+    } catch (error) { console.error('Error saving signature:', error); toast.error('Failed to save signature'); }
   };
 
   const saveTechNotes = async () => {
-    if (!techNotes.trim()) {
-      toast.error('Please enter notes');
-      return;
-    }
-
+    if (!techNotes.trim()) { toast.error('Please enter notes'); return; }
     try {
       const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
-      await updateDoc(jobRef, {
-        techNotes: techNotes,
-        updatedAt: new Date()
-      });
+      await updateDoc(jobRef, { techNotes: techNotes, updatedAt: new Date() });
       toast.success('Notes saved!');
-    } catch (error) {
-      console.error('Error saving notes:', error);
-      toast.error('Failed to save notes');
-    }
+    } catch (error) { console.error('Error saving notes:', error); toast.error('Failed to save notes'); }
   };
 
   const updateJobStatus = async (jobId, newStatus) => {
     if (!userProfile?.companyId) return;
-
-    // Validation for completion
     if (newStatus === 'completed') {
-      if (photos.length === 0) {
-        toast.error('Please upload at least one photo before completing');
-        return;
-      }
-      if (!signature) {
-        toast.error('Please capture customer signature before completing');
-        return;
-      }
-      if (!techNotes.trim()) {
-        toast.error('Please add technician notes before completing');
-        return;
-      }
+      if (photos.length === 0) { toast.error('Please upload at least one photo before completing'); return; }
+      if (!signature) { toast.error('Please capture customer signature before completing'); return; }
+      if (!techNotes.trim()) { toast.error('Please add technician notes before completing'); return; }
     }
-
     const loadingToast = toast.loading('Updating status...');
-    
     try {
       const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', jobId);
       const currentJob = jobs.find(j => j.id === jobId);
-      
-      await updateDoc(jobRef, {
+      const updateData = {
         status: newStatus,
         updatedAt: new Date(),
-        completedAt: newStatus === 'completed' ? new Date() : null,
         activityLog: arrayUnion({
-          type: 'status_changed',
-          field: 'status',
-          oldValue: currentJob?.status,
-          newValue: newStatus,
-          userName: userProfile.fullName || 'Technician',
-          timestamp: new Date()
+          type: 'status_changed', field: 'status',
+          oldValue: currentJob?.status, newValue: newStatus,
+          userName: userProfile.fullName || 'Technician', timestamp: new Date()
         })
-      });
-      
+      };
+      if (newStatus === 'en_route') updateData.enRouteAt = new Date();
+      else if (newStatus === 'in_progress') { updateData.startedAt = new Date(); startTimer(jobId); }
+      else if (newStatus === 'completed') {
+        updateData.completedAt = new Date();
+        if (activeTimers[jobId]) updateData.jobDuration = activeTimers[jobId].elapsed;
+        pauseTimer(jobId);
+      }
+      await updateDoc(jobRef, updateData);
       toast.success('Status updated!', { id: loadingToast });
-      setSelectedJob(null);
-      
-      // Reset form
-      setPhotos([]);
-      setTechNotes('');
-      setSignature(null);
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast.error('Failed to update status', { id: loadingToast });
-    }
+      if (newStatus === 'completed') {
+        resetTimer(jobId);
+        setSelectedJob(null);
+        setPhotos([]);
+        setTechNotes('');
+        setSignature(null);
+      }
+    } catch (error) { console.error('Error updating status:', error); toast.error('Failed to update status', { id: loadingToast }); }
   };
 
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'Not scheduled';
-    const date = new Date(dateTimeString);
-    return date.toLocaleString('en-US', { 
-      weekday: 'short',
-      month: 'short', 
-      day: 'numeric',
-      hour: 'numeric', 
-      minute: '2-digit' 
-    });
+    return new Date(dateTimeString).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'en_route': return 'bg-purple-100 text-purple-800';
       case 'in_progress': return 'bg-yellow-100 text-yellow-800';
       case 'completed': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'scheduled': return 'SCHEDULED';
+      case 'en_route': return 'EN ROUTE';
+      case 'in_progress': return 'IN PROGRESS';
+      case 'completed': return 'COMPLETED';
+      default: return status?.replace('_', ' ').toUpperCase() || 'UNKNOWN';
     }
   };
 
@@ -368,11 +366,7 @@ const TechDashboard = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading jobs...</div>
-      </div>
-    );
+    return (<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-gray-600">Loading jobs...</div></div>);
   }
 
   return (
@@ -390,68 +384,47 @@ const TechDashboard = () => {
               </div>
             </div>
             <button onClick={handleLogout} className="flex items-center bg-primary-700 px-4 py-2 rounded-lg hover:bg-primary-800 transition">
-              <FiLogOut className="mr-2" />
-              Logout
+              <FiLogOut className="mr-2" /> Logout
             </button>
           </div>
         </div>
       </header>
 
-      {/* Tabs */}
       <div className="bg-white border-b border-gray-200 sticky top-[72px] z-10">
         <div className="flex">
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`flex-1 py-4 text-center font-medium transition ${
-              activeTab === 'active'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => setActiveTab('completed')}
-            className={`flex-1 py-4 text-center font-medium transition ${
-              activeTab === 'completed'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Completed
-          </button>
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`flex-1 py-4 text-center font-medium transition ${
-              activeTab === 'all'
-                ? 'text-primary-600 border-b-2 border-primary-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            All
-          </button>
+          {['active', 'completed', 'all'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-4 text-center font-medium transition ${activeTab === tab ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-500 hover:text-gray-700'}`}>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="p-4 space-y-4 pb-20">
-        {(() => {
-          // Filter jobs based on active tab
-          let filteredJobs = jobs;
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+      <div className="flex justify-center items-center overflow-hidden transition-all duration-200"
+        style={{ height: pullDistance > 0 ? `${pullDistance}px` : '0px' }}>
+        <div className={`transition-transform duration-200 ${refreshing ? 'animate-spin' : ''}`}
+          style={{ transform: `rotate(${Math.min(pullDistance / PULL_THRESHOLD * 360, 360)}deg)` }}>
+          <svg className="w-6 h-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </div>
+        {pullDistance >= PULL_THRESHOLD && !refreshing && <span className="ml-2 text-sm text-primary-600 font-medium">Release to refresh</span>}
+        {refreshing && <span className="ml-2 text-sm text-primary-600 font-medium">Refreshing...</span>}
+      </div>
 
-          if (activeTab === 'active') {
-            filteredJobs = jobs.filter(job => job.status !== 'completed');
-          } else if (activeTab === 'completed') {
-            filteredJobs = jobs.filter(job => {
-              if (job.status !== 'completed') return false;
-              if (!job.completedAt) return false;
-              const completedDate = new Date(job.completedAt.seconds * 1000);
-              completedDate.setHours(0, 0, 0, 0);
-              return completedDate.getTime() === today.getTime();
-            });
-          }
-          // 'all' shows everything
+      <div ref={scrollContainerRef} className="p-4 space-y-4 pb-20"
+        onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+        {(() => {
+          let filteredJobs = jobs;
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          if (activeTab === 'active') filteredJobs = jobs.filter(job => job.status !== 'completed');
+          else if (activeTab === 'completed') filteredJobs = jobs.filter(job => {
+            if (job.status !== 'completed' || !job.completedAt) return false;
+            const d = new Date(job.completedAt.seconds ? job.completedAt.seconds * 1000 : job.completedAt);
+            d.setHours(0, 0, 0, 0);
+            return d.getTime() === today.getTime();
+          });
 
           return filteredJobs.length === 0 ? (
             <div className="text-center py-12">
@@ -472,27 +445,28 @@ const TechDashboard = () => {
               <div key={job.id} onClick={() => setSelectedJob(job)} className={`bg-white rounded-lg shadow-md p-4 ${getPriorityBorder(job.priority)} cursor-pointer active:scale-98 transition`}>
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="text-lg font-bold text-gray-900">{job.customerName}</h3>
-                  {job.priority === 'high' && <FiAlertCircle className="h-5 w-5 text-red-500" />}
+                  <div className="flex items-center gap-2">
+                    {job.priority === 'high' && <FiAlertCircle className="h-5 w-5 text-red-500" />}
+                    {activeTimers[job.id]?.running && (
+                      <span className="bg-red-100 text-red-700 text-xs font-mono font-bold px-2 py-1 rounded-full animate-pulse">
+                        ⏱ {formatTimer(activeTimers[job.id].elapsed)}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-start text-gray-700 mb-2">
-                  <FiMapPin className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                  <span>{job.address}</span>
+                  <FiMapPin className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" /><span>{job.address}</span>
                 </div>
                 <div className="flex items-center text-gray-700 mb-2">
                   <FiPhone className="h-5 w-5 mr-2" />
-                  <a href={`tel:${job.customerPhone}`} className="text-primary-600 font-medium" onClick={(e) => e.stopPropagation()}>
-                    {job.customerPhone}
-                  </a>
+                  <a href={`tel:${job.customerPhone}`} className="text-primary-600 font-medium" onClick={(e) => e.stopPropagation()}>{job.customerPhone}</a>
                 </div>
                 <div className="flex items-center text-gray-700 mb-3">
-                  <FiClock className="h-5 w-5 mr-2" />
-                  <span className="font-medium">{formatDateTime(job.scheduledDateTime)}</span>
+                  <FiClock className="h-5 w-5 mr-2" /><span className="font-medium">{formatDateTime(job.scheduledDateTime)}</span>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                   <span className="text-sm font-medium text-gray-500 uppercase">{job.jobType}</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(job.status)}`}>
-                    {job.status.replace('_', ' ').toUpperCase()}
-                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(job.status)}`}>{getStatusLabel(job.status)}</span>
                 </div>
               </div>
             ))
@@ -506,25 +480,41 @@ const TechDashboard = () => {
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">{selectedJob.customerName}</h2>
-                <button onClick={() => setSelectedJob(null)} className="text-gray-400 hover:text-gray-600">
-                  <FiX className="h-6 w-6" />
-                </button>
+                <button onClick={() => setSelectedJob(null)} className="text-gray-400 hover:text-gray-600"><FiX className="h-6 w-6" /></button>
               </div>
 
-              {/* Job Details */}
+              {(selectedJob.status === 'in_progress' || activeTimers[selectedJob.id]) && (
+                <div className="mb-6 bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm font-medium text-gray-700 mb-3">⏱ Job Timer</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl font-mono font-bold text-gray-900">{formatTimer(activeTimers[selectedJob.id]?.elapsed || 0)}</span>
+                    <div className="flex gap-2">
+                      {!activeTimers[selectedJob.id]?.running ? (
+                        <button onClick={() => startTimer(selectedJob.id)} className="flex items-center gap-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+                          <FiPlay className="h-4 w-4" />{activeTimers[selectedJob.id]?.elapsed > 0 ? 'Resume' : 'Start'}
+                        </button>
+                      ) : (
+                        <button onClick={() => pauseTimer(selectedJob.id)} className="flex items-center gap-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">
+                          <FiSquare className="h-4 w-4" />Pause
+                        </button>
+                      )}
+                      {activeTimers[selectedJob.id]?.elapsed > 0 && (
+                        <button onClick={() => resetTimer(selectedJob.id)} className="text-red-500 px-3 py-2 rounded-lg hover:bg-red-50 transition text-sm">Reset</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4 mb-6">
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Address</p>
                   <p className="text-gray-900">{selectedJob.address}</p>
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(selectedJob.address)}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm font-medium mt-2 inline-block">
-                    Get Directions →
-                  </a>
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(selectedJob.address)}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 text-sm font-medium mt-2 inline-block">Get Directions →</a>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Phone</p>
-                  <a href={`tel:${selectedJob.customerPhone}`} className="text-primary-600 font-medium text-lg">
-                    {selectedJob.customerPhone}
-                  </a>
+                  <a href={`tel:${selectedJob.customerPhone}`} className="text-primary-600 font-medium text-lg">{selectedJob.customerPhone}</a>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500 mb-1">Scheduled Time</p>
@@ -540,124 +530,95 @@ const TechDashboard = () => {
                     <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{selectedJob.notes}</p>
                   </div>
                 )}
+                {selectedJob.status === 'completed' && selectedJob.jobDuration && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-1">Time on Job</p>
+                    <p className="text-gray-900 font-medium">{formatTimer(selectedJob.jobDuration)}</p>
+                  </div>
+                )}
               </div>
 
-              {/* Photo Upload Section */}
               <div className="mb-6">
                 <p className="text-sm font-medium text-gray-700 mb-3">📸 Job Photos {photos.length > 0 && `(${photos.length}/5)`}</p>
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   {photos.map((photoUrl, index) => (
                     <div key={index} className="relative">
                       <img src={photoUrl} alt={`Job photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                      <button
-                        onClick={() => handleDeletePhoto(photoUrl)}
-                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"
-                      >
-                        <FiTrash2 className="h-3 w-3" />
-                      </button>
+                      {selectedJob.status !== 'completed' && (
+                        <button onClick={() => handleDeletePhoto(photoUrl)} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full"><FiTrash2 className="h-3 w-3" /></button>
+                      )}
                     </div>
                   ))}
                 </div>
-                {photos.length < 5 && (
+                {photos.length < 5 && selectedJob.status !== 'completed' && (
                   <>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      capture="environment"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                    />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="w-full bg-gray-100 border-2 border-dashed border-gray-300 text-gray-600 py-3 rounded-lg font-medium hover:bg-gray-200 transition flex items-center justify-center gap-2"
-                    >
-                      <FiCamera className="h-5 w-5" />
-                      {uploading ? 'Uploading...' : 'Take/Upload Photo'}
+                    <input ref={fileInputRef} type="file" accept="image/*" multiple capture="environment" onChange={handlePhotoUpload} className="hidden" />
+                    <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                      className="w-full bg-gray-100 border-2 border-dashed border-gray-300 text-gray-600 py-3 rounded-lg font-medium hover:bg-gray-200 transition flex items-center justify-center gap-2">
+                      <FiCamera className="h-5 w-5" />{uploading ? 'Uploading...' : 'Take/Upload Photo'}
                     </button>
                   </>
                 )}
               </div>
 
-              {/* Tech Notes */}
               <div className="mb-6">
                 <p className="text-sm font-medium text-gray-700 mb-2">📝 Technician Notes</p>
-                <textarea
-                  value={techNotes}
-                  onChange={(e) => setTechNotes(e.target.value)}
-                  placeholder="Add notes about the job, work performed, parts used, etc."
-                  className="w-full border border-gray-300 rounded-lg p-3 min-h-[100px] focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-                <button
-                  onClick={saveTechNotes}
-                  className="mt-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition"
-                >
-                  Save Notes
-                </button>
+                {selectedJob.status === 'completed' ? (
+                  <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{techNotes || 'No notes'}</p>
+                ) : (
+                  <>
+                    <textarea value={techNotes} onChange={(e) => setTechNotes(e.target.value)}
+                      placeholder="Add notes about the job, work performed, parts used, etc."
+                      className="w-full border border-gray-300 rounded-lg p-3 min-h-[100px] focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+                    <button onClick={saveTechNotes} className="mt-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">Save Notes</button>
+                  </>
+                )}
               </div>
 
-              {/* Digital Signature */}
               <div className="mb-6">
                 <p className="text-sm font-medium text-gray-700 mb-2">✍️ Customer Signature</p>
                 {signature ? (
                   <div className="relative">
                     <img src={signature} alt="Customer signature" className="w-full border-2 border-gray-300 rounded-lg" />
-                    <button
-                      onClick={clearSignature}
-                      className="mt-2 text-red-600 text-sm font-medium"
-                    >
-                      Clear & Re-sign
-                    </button>
+                    {selectedJob.status !== 'completed' && <button onClick={clearSignature} className="mt-2 text-red-600 text-sm font-medium">Clear & Re-sign</button>}
                   </div>
-                ) : (
+                ) : selectedJob.status !== 'completed' ? (
                   <div>
-                    <canvas
-                      ref={canvasRef}
-                      width={300}
-                      height={150}
-                      onMouseDown={startDrawing}
-                      onMouseMove={draw}
-                      onMouseUp={stopDrawing}
-                      onMouseLeave={stopDrawing}
-                      onTouchStart={startDrawing}
-                      onTouchMove={draw}
-                      onTouchEnd={stopDrawing}
-                      className="w-full border-2 border-gray-300 rounded-lg touch-none cursor-crosshair bg-white"
-                    />
+                    <canvas ref={canvasRef} width={300} height={150}
+                      onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
+                      onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing}
+                      className="w-full border-2 border-gray-300 rounded-lg touch-none cursor-crosshair bg-white" />
                     <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={clearSignature}
-                        className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        onClick={saveSignature}
-                        className="flex-1 bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition"
-                      >
-                        Save Signature
-                      </button>
+                      <button onClick={clearSignature} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition">Clear</button>
+                      <button onClick={saveSignature} className="flex-1 bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">Save Signature</button>
                     </div>
                   </div>
-                )}
+                ) : <p className="text-gray-400 text-sm">No signature captured</p>}
               </div>
 
-              {/* Status Update Buttons */}
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-700 mb-3">Update Status:</p>
-                {selectedJob.status === 'scheduled' && (
-                  <button onClick={() => updateJobStatus(selectedJob.id, 'in_progress')} className="w-full bg-yellow-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-yellow-600 transition shadow-lg">
-                    Start Job
-                  </button>
-                )}
-                {selectedJob.status === 'in_progress' && (
-                  <button onClick={() => updateJobStatus(selectedJob.id, 'completed')} className="w-full bg-green-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-green-600 transition shadow-lg">
-                    Mark Complete
-                  </button>
-                )}
-              </div>
+              {selectedJob.status !== 'completed' && (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-gray-700 mb-3">Update Status:</p>
+                  {selectedJob.status === 'scheduled' && (
+                    <button onClick={() => updateJobStatus(selectedJob.id, 'en_route')}
+                      className="w-full bg-purple-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-purple-600 transition shadow-lg flex items-center justify-center gap-2">
+                      <FiNavigation className="h-5 w-5" /> En Route
+                    </button>
+                  )}
+                  {selectedJob.status === 'en_route' && (
+                    <button onClick={() => updateJobStatus(selectedJob.id, 'in_progress')}
+                      className="w-full bg-yellow-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-yellow-600 transition shadow-lg">
+                      Start Job
+                    </button>
+                  )}
+                  {selectedJob.status === 'in_progress' && (
+                    <button onClick={() => updateJobStatus(selectedJob.id, 'completed')}
+                      className="w-full bg-green-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-green-600 transition shadow-lg">
+                      Mark Complete
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
