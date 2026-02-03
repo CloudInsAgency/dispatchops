@@ -42,6 +42,7 @@ const TechDashboard = () => {
   }, [userProfile]);
 
   useEffect(() => {
+    console.log("DEBUG userProfile:", JSON.stringify(userProfile));
     if (!userProfile?.companyId || !userProfile?.fullName) {
       setLoading(false);
       return;
