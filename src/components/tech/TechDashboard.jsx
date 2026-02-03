@@ -51,6 +51,7 @@ const TechDashboard = () => {
     const q = query(jobsRef);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log("DEBUG snapshot size:", snapshot.size, "companyId:", userProfile.companyId, "fullName:", userProfile.fullName, "uid:", userProfile.uid);
       const allJobs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
