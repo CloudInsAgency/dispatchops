@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, orderBy, setDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheckCircle, FiClock, FiCopy } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -86,14 +86,18 @@ const TechniciansPage = () => {
         });
         toast.success('Technician updated!', { id: loadingToast });
       } else {
-        await addDoc(collection(db, 'companies', userProfile.companyId, 'technicians'), {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          status: 'available',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+          // Add to technicians subcollection
+          const techDoc = await addDoc(collection(db, 'companies', userProfile.companyId, 'technicians'), {
+            name: formData.name,
+            fullName: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            status: 'available',
+            companyId: userProfile.companyId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+
         toast.success('Technician added!', { id: loadingToast });
       }
 

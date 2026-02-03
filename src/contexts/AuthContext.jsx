@@ -5,7 +5,7 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext();
@@ -105,7 +105,42 @@ export const AuthProvider = ({ children }) => {
           ...userData,
           company: companyData
         });
+      } else {
+      // No users doc - check if this user is a technician
+      const techQuery = query(
+        collectionGroup(db, 'technicians'),
+        where('email', '==', user.email)
+      );
+      const techSnap = await getDocs(techQuery);
+
+      if (!techSnap.empty) {
+        const techData = techSnap.docs[0].data();
+        const companyId = techSnap.docs[0].ref.parent.parent.id;
+
+        const newUserData = {
+          uid: user.uid,
+          email: user.email,
+          fullName: techData.name || techData.fullName || user.email,
+          role: 'tech',
+          companyId: companyId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+        await setDoc(userRef, newUserData);
+
+        let companyData = null;
+        const companyRef = doc(db, 'companies', companyId);
+        const companySnap = await getDoc(companyRef);
+        if (companySnap.exists()) {
+          companyData = companySnap.data();
+        }
+
+        setUserProfile({
+          ...newUserData,
+          company: companyData
+        });
       }
+    }
     } catch (error) {
       console.error('Error loading user profile:', error);
     }
