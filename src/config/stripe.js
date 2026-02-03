@@ -14,7 +14,7 @@ export const PLANS = {
       'Up to 10 technicians',
       'Up to 200 jobs/month',
       'Real-time dispatch board',
-      'Mobile app for technicians',
+      'Technician mobile dashboard',
       'Basic reporting',
       'Email support'
     ]

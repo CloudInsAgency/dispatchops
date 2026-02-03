@@ -19,9 +19,9 @@ export const PRICING_TIERS = [
     stripeProductId: 'price_starter_monthly', // You'll get this from Stripe
     features: [
       'Up to 10 technicians',
-      'Unlimited jobs',
+      'Up to 200 jobs/month',
       'Real-time dispatch board',
-      'Mobile app for technicians',
+      'Technician mobile dashboard',
       'Basic reporting',
       'Email support'
     ],
@@ -36,6 +36,7 @@ export const PRICING_TIERS = [
     stripeProductId: 'price_growth_monthly', // You'll get this from Stripe
     features: [
       'Up to 20 technicians',
+      'Up to 400 jobs/month',
       'Everything in Starter',
       'Advanced reporting',
       'Priority email support',
@@ -47,12 +48,13 @@ export const PRICING_TIERS = [
   {
     id: 'professional',
     name: 'Professional Plan',
-    techRange: '21+ technicians',
+    techRange: '21-40 technicians',
     price: 275.00,
-    maxTechnicians: 999,
+    maxTechnicians: 40,
     stripeProductId: 'price_professional_monthly', // You'll get this from Stripe
     features: [
-      'Unlimited technicians',
+      'Up to 40 technicians',
+      'Up to 800 jobs/month',
       'Everything in Growth',
       'API access',
       'Phone support',
