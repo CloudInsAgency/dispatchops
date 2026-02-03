@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import { FiTruck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ const TechLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -24,6 +25,25 @@ const TechLogin = () => {
       toast.error('Invalid email or password');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+      toast.success('Password reset email sent! Check your inbox.');
+    } catch (error) {
+      console.error('Reset error:', error);
+      if (error.code === 'auth/user-not-found') {
+        toast.error('No account found with this email');
+      } else {
+        toast.error('Failed to send reset email. Please try again.');
+      }
     }
   };
 
@@ -71,6 +91,20 @@ const TechLogin = () => {
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
+
+          {resetSent ? (
+            <p className="text-center text-sm text-green-600 font-medium">
+              ✓ Reset link sent to {email}
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="w-full text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
+            >
+              Forgot your password?
+            </button>
+          )}
         </form>
       </div>
     </div>
