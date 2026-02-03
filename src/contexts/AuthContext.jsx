@@ -106,21 +106,18 @@ export const AuthProvider = ({ children }) => {
           company: companyData
         });
       } else {
-      // No users doc - check if this user is a technician
-      const techQuery = query(
-        collectionGroup(db, 'technicians'),
-        where('email', '==', user.email)
-      );
-      const techSnap = await getDocs(techQuery);
+      // No users doc - check techInvites for this email
+      const inviteRef = doc(db, 'techInvites', user.email);
+      const inviteSnap = await getDoc(inviteRef);
 
-      if (!techSnap.empty) {
-        const techData = techSnap.docs[0].data();
-        const companyId = techSnap.docs[0].ref.parent.parent.id;
+      if (inviteSnap.exists()) {
+        const inviteData = inviteSnap.data();
+        const companyId = inviteData.companyId;
 
         const newUserData = {
           uid: user.uid,
           email: user.email,
-          fullName: techData.name || techData.fullName || user.email,
+          fullName: inviteData.name || user.email,
           role: 'tech',
           companyId: companyId,
           createdAt: serverTimestamp(),

@@ -98,6 +98,13 @@ const TechniciansPage = () => {
             updatedAt: new Date()
           });
 
+          // Write to techInvites so tech can auto-provision on first login
+          await setDoc(doc(db, 'techInvites', formData.email), {
+            companyId: userProfile.companyId,
+            name: formData.name,
+            createdAt: new Date()
+          });
+
         toast.success('Technician added!', { id: loadingToast });
       }
 
