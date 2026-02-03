@@ -73,7 +73,7 @@ const SignupPage = () => {
       };
       
       // Create user with Firebase Auth and Firestore
-      await signup(formData.email, formData.password, signupData);
+      await signup(formData.email, formData.password, formData.fullName, formData.companyName, formData.phone);
       
       // After successful signup, redirect to onboarding
       navigate('/onboarding');
