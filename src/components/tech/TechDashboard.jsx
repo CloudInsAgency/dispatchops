@@ -43,13 +43,14 @@ const TechDashboard = () => {
 
   useEffect(() => {
     console.log("DEBUG userProfile:", JSON.stringify(userProfile));
-    if (!userProfile?.companyId || !userProfile?.fullName) {
+    const companyId = userProfile?.companyId || userProfile?.companyID;
+    if (!companyId || !userProfile?.fullName) {
       setLoading(false);
       return;
     }
 
-    console.log("DEBUG about to query jobs for companyId:", userProfile.companyId);
-    const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+    
+    const jobsRef = collection(db, 'companies', companyId, 'jobs');
     const q = query(jobsRef);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
