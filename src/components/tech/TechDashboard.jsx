@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, onSnapshot, orderBy, doc as firestoreDoc, getDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc as firestoreDoc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../../config/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { FiLogOut, FiMapPin, FiPhone, FiClock, FiCheckCircle, FiAlertCircle, FiX, FiCamera, FiTrash2, FiTruck } from 'react-icons/fi';
@@ -42,26 +42,32 @@ const TechDashboard = () => {
   }, [userProfile]);
 
   useEffect(() => {
-    if (!userProfile?.companyId) {
+    if (!userProfile?.companyId || !userProfile?.fullName) {
       setLoading(false);
       return;
     }
 
     const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
-    const q = query(
-      jobsRef,
-      where('assignedToName', '==', userProfile.fullName),
-      orderBy('scheduledDateTime', 'asc')
-    );
+    const q = query(jobsRef);
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const jobsData = snapshot.docs.map(doc => ({
+      const allJobs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
       
-      // Load all jobs - filtering happens in render based on active tab
-      setJobs(jobsData);
+      const myJobs = allJobs.filter(job => 
+        job.assignedToName === userProfile.fullName ||
+        job.assignedToUid === userProfile.uid
+      );
+
+      myJobs.sort((a, b) => {
+        const dateA = a.scheduledDateTime || '';
+        const dateB = b.scheduledDateTime || '';
+        return dateA.localeCompare(dateB);
+      });
+
+      setJobs(myJobs);
       setLoading(false);
     }, (error) => {
       console.error('Error fetching jobs:', error);
@@ -70,7 +76,6 @@ const TechDashboard = () => {
 
     return () => unsubscribe();
   }, [userProfile]);
-
   // Reset form when job selection changes
   useEffect(() => {
     if (selectedJob) {
