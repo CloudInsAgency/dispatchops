@@ -48,6 +48,7 @@ const TechDashboard = () => {
       return;
     }
 
+    console.log("DEBUG about to query jobs for companyId:", userProfile.companyId);
     const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
     const q = query(jobsRef);
 
@@ -72,7 +73,7 @@ const TechDashboard = () => {
       setJobs(myJobs);
       setLoading(false);
     }, (error) => {
-      console.error('Error fetching jobs:', error);
+      console.error('Error fetching jobs:', error.code, error.message);
       setLoading(false);
     });
 
