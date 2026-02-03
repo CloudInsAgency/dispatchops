@@ -140,6 +140,7 @@ const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
   const jobsByStatus = {
     unassigned: filteredJobs.filter(job => job.status === 'unassigned'),
     scheduled: filteredJobs.filter(job => job.status === 'scheduled'),
+    en_route: filteredJobs.filter(job => job.status === 'en_route'),
     in_progress: filteredJobs.filter(job => job.status === 'in_progress'),
     completed: filteredJobs.filter(job => job.status === 'completed')
   };
@@ -189,7 +190,7 @@ const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
       newStatus = droppedOnJob.status;
     }
 
-    const validStatuses = ['unassigned', 'scheduled', 'in_progress', 'completed'];
+    const validStatuses = ['unassigned', 'scheduled', 'en_route', 'in_progress', 'completed'];
     if (!validStatuses.includes(newStatus)) {
       setActiveId(null);
       return;
@@ -345,7 +346,7 @@ const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
       >
         <div className="h-full overflow-x-auto">
           <div className="flex gap-4 pb-4" style={{ minWidth: '1200px' }}>
-            <SortableContext items={['unassigned', 'scheduled', 'in_progress', 'completed']} strategy={verticalListSortingStrategy}>
+            <SortableContext items={['unassigned', 'scheduled', 'en_route', 'in_progress', 'completed']} strategy={verticalListSortingStrategy}>
               <DroppableColumn
                 id="unassigned"
                 title="Unassigned"
@@ -357,6 +358,12 @@ const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
                 title="Scheduled"
                 jobs={jobsByStatus.scheduled}
                 count={jobsByStatus.scheduled.length}
+              />
+              <DroppableColumn
+                id="en_route"
+                title="En Route"
+                jobs={jobsByStatus.en_route}
+                count={jobsByStatus.en_route.length}
               />
               <DroppableColumn
                 id="in_progress"
