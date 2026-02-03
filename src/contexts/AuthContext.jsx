@@ -114,7 +114,10 @@ export const AuthProvider = ({ children }) => {
         const inviteData = inviteSnap.data();
         const companyId = inviteData.companyId;
 
-        const newUserData = {
+        console.log('Found techInvite for', user.email, 'companyId:', companyId);
+        
+        // Write to Firestore with server timestamps
+        await setDoc(userRef, {
           uid: user.uid,
           email: user.email,
           fullName: inviteData.name || user.email,
@@ -122,8 +125,11 @@ export const AuthProvider = ({ children }) => {
           companyId: companyId,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
-        };
-        await setDoc(userRef, newUserData);
+        });
+
+        // Read back the newly created doc to get resolved timestamps
+        const newUserSnap = await getDoc(userRef);
+        const newUserData = newUserSnap.data();
 
         let companyData = null;
         const companyRef = doc(db, 'companies', companyId);
@@ -132,6 +138,7 @@ export const AuthProvider = ({ children }) => {
           companyData = companySnap.data();
         }
 
+        console.log('Auto-provisioned tech user:', newUserData);
         setUserProfile({
           ...newUserData,
           company: companyData
