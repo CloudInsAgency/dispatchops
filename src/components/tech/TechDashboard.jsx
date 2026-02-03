@@ -552,7 +552,7 @@ const TechDashboard = () => {
                 </div>
                 {photos.length < 5 && selectedJob.status !== 'completed' && (
                   <>
-                    <input ref={fileInputRef} type="file" accept="image/*" multiple capture="environment" onChange={handlePhotoUpload} className="hidden" />
+                    <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" />
                     <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
                       className="w-full bg-gray-100 border-2 border-dashed border-gray-300 text-gray-600 py-3 rounded-lg font-medium hover:bg-gray-200 transition flex items-center justify-center gap-2">
                       <FiCamera className="h-5 w-5" />{uploading ? 'Uploading...' : 'Take/Upload Photo'}
