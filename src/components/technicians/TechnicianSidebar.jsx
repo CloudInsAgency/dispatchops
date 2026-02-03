@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { collection, query, onSnapshot, orderBy, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, doc, deleteDoc, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../config/firebase';
-import { FiPlus, FiUser, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
+import { FiPlus, FiUser, FiEdit2, FiTrash2, FiX, FiNavigation, FiTool } from 'react-icons/fi';
 import AddTechnicianModal from './AddTechnicianModal';
 import { usePlanLimits } from '../../hooks/usePlanLimits';
 import UpgradeModal from '../subscription/UpgradeModal';
@@ -13,6 +13,7 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTech, setEditingTech] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', phone: '', status: '' });
+  const [activeJobs, setActiveJobs] = useState([]);
   const { canAddTech, currentPlan, planDetails, techCount } = usePlanLimits(userProfile);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -28,6 +29,30 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
     });
     return () => unsubscribe();
   }, [userProfile]);
+
+  // Listen to active jobs for real-time tech status
+  useEffect(() => {
+    if (!userProfile?.companyId) return;
+    const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+    const q = query(jobsRef);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const jobs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setActiveJobs(jobs);
+    });
+    return () => unsubscribe();
+  }, [userProfile]);
+
+  // Get real-time status for a technician based on their jobs
+  const getTechLiveStatus = (techName) => {
+    const techJobs = activeJobs.filter(j => j.assignedToName === techName);
+    const enRouteJob = techJobs.find(j => j.status === 'en_route');
+    if (enRouteJob) return { status: 'en_route', label: 'En Route', customer: enRouteJob.customerName, color: 'bg-purple-500', textColor: 'text-purple-700', bgColor: 'bg-purple-50' };
+    const inProgressJob = techJobs.find(j => j.status === 'in_progress');
+    if (inProgressJob) return { status: 'in_progress', label: 'Working', customer: inProgressJob.customerName, color: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50' };
+    const scheduledJobs = techJobs.filter(j => j.status === 'scheduled');
+    if (scheduledJobs.length > 0) return { status: 'scheduled', label: `${scheduledJobs.length} job${scheduledJobs.length > 1 ? 's' : ''} scheduled`, customer: null, color: 'bg-blue-500', textColor: 'text-blue-700', bgColor: 'bg-blue-50' };
+    return null;
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -144,15 +169,30 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
                 ) : (
                   <>
                     <div onClick={() => onTechnicianSelect(selectedTechnicianId === tech.id ? null : tech.id)} className="cursor-pointer">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center">
-                          <div className={`w-2 h-2 rounded-full ${getStatusColor(tech.status)} mr-2`}></div>
+                          <div className={`w-2.5 h-2.5 rounded-full ${getTechLiveStatus(tech.name)?.color || getStatusColor(tech.status)} mr-2`}></div>
                           <h3 className="font-semibold text-gray-900">{tech.name}</h3>
                         </div>
                       </div>
                       <p className="text-sm text-gray-600">{tech.email}</p>
                       <p className="text-sm text-gray-600">{tech.phone}</p>
-                      <p className="text-xs text-gray-500 mt-1 capitalize">{tech.status}</p>
+                      {getTechLiveStatus(tech.name) ? (
+                        <div className={`mt-2 px-2 py-1 rounded-md ${getTechLiveStatus(tech.name).bgColor} flex items-center gap-1`}>
+                          {getTechLiveStatus(tech.name).status === 'en_route' && <FiNavigation className={`h-3 w-3 ${getTechLiveStatus(tech.name).textColor}`} />}
+                          {getTechLiveStatus(tech.name).status === 'in_progress' && <FiTool className={`h-3 w-3 ${getTechLiveStatus(tech.name).textColor}`} />}
+                          <span className={`text-xs font-semibold ${getTechLiveStatus(tech.name).textColor}`}>
+                            {getTechLiveStatus(tech.name).label}
+                          </span>
+                          {getTechLiveStatus(tech.name).customer && (
+                            <span className={`text-xs ${getTechLiveStatus(tech.name).textColor} opacity-75`}>
+                              — {getTechLiveStatus(tech.name).customer}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-1 capitalize">{tech.status}</p>
+                      )}
                     </div>
                     <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
                       <button onClick={(e) => { e.stopPropagation(); handleEdit(tech); }} className="flex-1 flex items-center justify-center text-sm text-gray-600 hover:text-primary-600">
