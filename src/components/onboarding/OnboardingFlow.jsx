@@ -199,68 +199,47 @@ const OnboardingFlow = () => {
                 <FiUser className="h-8 w-8 text-primary-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Add Your First Technician</h2>
-                <p className="text-gray-600">We'll send them an invite to download the mobile app</p>
+                <h2 className="text-2xl font-bold text-gray-900">Your Technicians</h2>
+                <p className="text-gray-600">Add and manage your team from the Technicians page</p>
               </div>
             </div>
 
-            <form onSubmit={handleAddTechnician} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Technician Name *
-                </label>
-                <input
-                  type="text"
-                  value={technicianData.name}
-                  onChange={(e) => setTechnicianData({...technicianData, name: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-                  placeholder="John Smith"
-                  required
-                />
+            <div className="space-y-4 mb-8">
+              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                <span className="text-2xl">1️⃣</span>
+                <div>
+                  <p className="font-medium text-gray-900">Go to the Technicians page</p>
+                  <p className="text-sm text-gray-600">After setup, click "Technicians" in the sidebar</p>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  value={technicianData.email}
-                  onChange={(e) => setTechnicianData({...technicianData, email: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-                  placeholder="john@example.com"
-                  required
-                />
+              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                <span className="text-2xl">2️⃣</span>
+                <div>
+                  <p className="font-medium text-gray-900">Click "+ Add Technician"</p>
+                  <p className="text-sm text-gray-600">Enter their name, email, and phone number</p>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  value={technicianData.phone}
-                  onChange={(e) => setTechnicianData({...technicianData, phone: e.target.value})}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent"
-                  placeholder="(555) 123-4567"
-                  required
-                />
+              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                <span className="text-2xl">3️⃣</span>
+                <div>
+                  <p className="font-medium text-gray-900">Share their login credentials</p>
+                  <p className="text-sm text-gray-600">A password is auto-generated — copy and send it to your tech so they can log in</p>
+                </div>
               </div>
+            </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                  💡 After adding, we'll send {technicianData.name || 'them'} an email and SMS with instructions to download the mobile app.
-                </p>
-              </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-800">
+                💡 Your Starter Plan includes up to 10 technicians. You can add them anytime from the Technicians page.
+              </p>
+            </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition disabled:opacity-50"
-              >
-                {loading ? 'Adding Technician...' : 'Add Technician & Continue'}
-              </button>
-            </form>
+            <button
+              onClick={() => setStep(1)}
+              className="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition"
+            >
+              Got It — Continue
+            </button>
           </div>
         )}
 
