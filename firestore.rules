@@ -1,0 +1,122 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // Check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Get the user's document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Check if user is an owner
+    function isOwner() {
+      return isSignedIn() && getUserData().role == 'owner';
+    }
+
+    // Check if user is a tech
+    function isTech() {
+      return isSignedIn() && getUserData().role == 'tech';
+    }
+
+    // Check if user belongs to a specific company
+    function belongsToCompany(companyId) {
+      return isSignedIn() && getUserData().companyId == companyId;
+    }
+
+    // Check if user is the owner of a specific company
+    function isCompanyOwner(companyId) {
+      return isSignedIn() && isOwner() && getUserData().companyId == companyId;
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Users can read their own profile
+      // Owners can read any user in their company (to look up techs)
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId ||
+        (isOwner() && resource.data.companyId == getUserData().companyId)
+      );
+
+      // Users can update their own profile (but not change role or companyId)
+      allow update: if isSignedIn() && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.companyId == resource.data.companyId;
+
+      // Only allow creation during signup (auth uid must match doc id)
+      allow create: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ============================================
+    // COMPANIES COLLECTION
+    // ============================================
+    match /companies/{companyId} {
+      // Only company members can read
+      allow read: if isSignedIn() && belongsToCompany(companyId);
+
+      // Only company owner can update
+      allow update: if isCompanyOwner(companyId);
+
+      // Only allow creation during signup (company id = owner uid)
+      allow create: if isSignedIn() && request.auth.uid == companyId;
+
+      // ---- TECHNICIANS SUBCOLLECTION ----
+      match /technicians/{techId} {
+        // Company members can read technicians
+        allow read: if isSignedIn() && belongsToCompany(companyId);
+
+        // Only owner can create, update, delete technicians
+        allow create, update, delete: if isCompanyOwner(companyId);
+      }
+
+      // ---- JOBS SUBCOLLECTION ----
+      match /jobs/{jobId} {
+        // Company members can read jobs
+        allow read: if isSignedIn() && belongsToCompany(companyId);
+
+        // Owner can do anything with jobs
+        allow create, update, delete: if isCompanyOwner(companyId);
+
+        // Techs can update jobs assigned to them (status changes)
+        allow update: if isSignedIn() && isTech() && belongsToCompany(companyId);
+      }
+
+      // ---- SETTINGS / BUSINESS HOURS / SERVICE AREA ----
+      match /settings/{settingId} {
+        allow read: if isSignedIn() && belongsToCompany(companyId);
+        allow write: if isCompanyOwner(companyId);
+      }
+    }
+
+    // ============================================
+    // TECH INVITES COLLECTION
+    // ============================================
+    match /techInvites/{email} {
+      // Allow read for the invited tech (matching by email)
+      allow read: if isSignedIn() && request.auth.token.email == email;
+
+      // Only owners can create invites
+      allow create, update: if isSignedIn() && isOwner();
+
+      // Only owners can delete invites
+      allow delete: if isSignedIn() && isOwner();
+    }
+
+    // ============================================
+    // DENY ALL OTHER ACCESS
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
