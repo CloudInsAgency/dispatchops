@@ -366,9 +366,9 @@ const SignupPage = () => {
                       <input type="checkbox" className="mr-3" required />
                       <span className="text-sm text-gray-600">
                         I agree to the{' '}
-                        <a href="#" className="text-primary-600 hover:underline">Terms of Service</a>
+                        <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">Terms of Service</a>
                         {' '}and{' '}
-                        <a href="#" className="text-primary-600 hover:underline">Privacy Policy</a>
+                        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">Privacy Policy</a>
                       </span>
                     </label>
                   </div>
