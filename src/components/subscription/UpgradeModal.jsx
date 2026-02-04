@@ -3,9 +3,9 @@ import { FiX, FiCheckCircle, FiTrendingUp } from 'react-icons/fi';
 import { stripePromise, PLANS, getRecommendedUpgrade } from '../../config/stripe';
 import toast from 'react-hot-toast';
 
-const UpgradeModal = ({ isOpen, onClose, currentPlan, userId, companyId, customerEmail, reason }) => {
+const UpgradeModal = ({ isOpen, onClose, currentPlan, targetPlan, userId, companyId, customerEmail, reason }) => {
   const [loading, setLoading] = useState(false);
-  const recommendedPlan = getRecommendedUpgrade(currentPlan);
+  const recommendedPlan = targetPlan || getRecommendedUpgrade(currentPlan);
   const upgradePlan = PLANS[recommendedPlan];
 
   if (!isOpen || !upgradePlan) return null;

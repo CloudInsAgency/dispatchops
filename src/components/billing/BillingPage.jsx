@@ -11,6 +11,7 @@ const BillingPage = () => {
   const { userProfile, currentUser } = useAuth();
   const { currentPlan, planDetails, techCount, monthlyJobCount } = usePlanLimits(userProfile);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const upgradePlan = getRecommendedUpgrade(currentPlan);
@@ -98,7 +99,7 @@ const BillingPage = () => {
           </div>
           <div className="flex flex-col gap-2">
             {upgradePlan && (
-              <button onClick={() => setShowUpgradeModal(true)} className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition flex items-center gap-2">
+              <button onClick={() => { setSelectedPlan(null); setShowUpgradeModal(true); }} className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition flex items-center gap-2">
                 Upgrade Plan <FiArrowRight className="h-5 w-5" />
               </button>
             )}
@@ -168,7 +169,7 @@ const BillingPage = () => {
                 {isCurrentPlan ? (
                   <div className="mt-4 text-center py-2 text-sm font-medium text-primary-600 border border-primary-300 rounded-lg bg-white">Current Plan</div>
                 ) : (
-                  <button onClick={() => setShowUpgradeModal(true)} className={`mt-4 w-full py-2 rounded-lg text-sm font-medium transition ${isDowngrade ? 'border border-gray-300 text-gray-600 hover:bg-gray-50' : 'bg-primary-600 text-white hover:bg-primary-700'}`}>
+                  <button onClick={() => { setSelectedPlan(plan.id); setShowUpgradeModal(true); }} className={`mt-4 w-full py-2 rounded-lg text-sm font-medium transition ${isDowngrade ? 'border border-gray-300 text-gray-600 hover:bg-gray-50' : 'bg-primary-600 text-white hover:bg-primary-700'}`}>
                     {isDowngrade ? 'Downgrade' : 'Upgrade'}
                   </button>
                 )}
@@ -178,7 +179,7 @@ const BillingPage = () => {
         </div>
       </div>
 
-      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} currentPlan={currentPlan} userId={currentUser?.uid} companyId={userProfile?.companyId} customerEmail={currentUser?.email} reason="Upgrade your plan to unlock more features." />
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} currentPlan={currentPlan} userId={currentUser?.uid} companyId={userProfile?.companyId} customerEmail={currentUser?.email} targetPlan={selectedPlan} reason="Upgrade your plan to unlock more features." />
     </div>
   );
 };
