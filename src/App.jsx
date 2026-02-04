@@ -5,6 +5,7 @@ import LandingPage from './components/landing/LandingPage';
 import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import TrialGate from './components/TrialGate';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import Dashboard from './components/dashboard/Dashboard';
 import TechLogin from './components/tech/TechLogin';
@@ -23,6 +24,14 @@ import TermsOfServicePage from './components/pages/TermsOfServicePage';
 
 const AdminLayout = ({ children }) => (
   <ProtectedRoute>
+    <TrialGate>
+      <AppShell>{children}</AppShell>
+    </TrialGate>
+  </ProtectedRoute>
+);
+
+const AdminLayoutNoGate = ({ children }) => (
+  <ProtectedRoute>
     <AppShell>{children}</AppShell>
   </ProtectedRoute>
 );
@@ -39,7 +48,7 @@ function App() {
         <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
         <Route path="/technicians" element={<AdminLayout><TechniciansPage /></AdminLayout>} />
         <Route path="/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
-        <Route path="/billing" element={<AdminLayout><BillingPage /></AdminLayout>} />
+        <Route path="/billing" element={<AdminLayoutNoGate><BillingPage /></AdminLayoutNoGate>} />
             <Route path="/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
         <Route path="/dispatch" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dispatch/technicians" element={<Navigate to="/technicians" replace />} />

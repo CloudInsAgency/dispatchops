@@ -5,7 +5,7 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, collectionGroup, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, Timestamp, collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 const AuthContext = createContext();
@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }) => {
       createdAt: serverTimestamp(),
       isActive: true,
       subscriptionStatus: 'trialing',
+      trialEndsAt: Timestamp.fromDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
       stripeCustomerId: null,
       subscriptionId: null
     });
@@ -53,7 +54,8 @@ export const AuthProvider = ({ children }) => {
         plan: 'starter',
         techLimit: 10,
         jobLimit: 100,
-        status: 'active',
+        status: 'trialing',
+        trialEndsAt: Timestamp.fromDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
         stripeCustomerId: '',
         stripeSubscriptionId: ''
       }
