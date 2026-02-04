@@ -44,6 +44,12 @@ function App() {
         <Route path="/dispatch" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dispatch/technicians" element={<Navigate to="/technicians" replace />} />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingFlow /></ProtectedRoute>} />
+        <Route path="/help" element={<HelpCenterPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/status" element={<SystemStatusPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
