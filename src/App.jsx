@@ -14,6 +14,12 @@ import AppShell from './components/layout/AppShell';
 import SettingsPage from './components/settings/SettingsPage';
 import BillingPage from './components/billing/BillingPage';
 import ReportsPage from './components/reports/ReportsPage';
+import HelpCenterPage from './components/pages/HelpCenterPage';
+import ContactPage from './components/pages/ContactPage';
+import SystemStatusPage from './components/pages/SystemStatusPage';
+import AboutPage from './components/pages/AboutPage';
+import PrivacyPolicyPage from './components/pages/PrivacyPolicyPage';
+import TermsOfServicePage from './components/pages/TermsOfServicePage';
 
 const AdminLayout = ({ children }) => (
   <ProtectedRoute>
