@@ -1,9 +1,11 @@
+import { useAuth } from "../contexts/AuthContext";
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { canAddTechnician, canCreateJob, getPlanById } from '../config/stripe';
 
 export const usePlanLimits = (userProfile) => {
+  const { currentUser } = useAuth();
   const [techCount, setTechCount] = useState(0);
   const [monthlyJobCount, setMonthlyJobCount] = useState(0);
   const [canAddTech, setCanAddTech] = useState(true);
