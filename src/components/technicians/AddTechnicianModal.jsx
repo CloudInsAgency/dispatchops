@@ -40,7 +40,7 @@ const AddTechnicianModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const companyId = userProfile?.companyId || currentUser?.uid;
+    const companyId = currentUser?.uid || userProfile?.companyId;
     if (!companyId) return;
 
     setLoading(true);

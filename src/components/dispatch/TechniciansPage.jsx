@@ -27,13 +27,13 @@ const TechniciansPage = () => {
   });
 
   useEffect(() => {
-    if (!userProfile?.companyId) {
+    if (!currentUser?.uid) {
       setLoading(false);
       return;
     }
 
     // Read from companies/{companyId}/technicians - same as TechnicianSidebar
-    const techsRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+    const techsRef = collection(db, 'companies', currentUser.uid, 'technicians');
     const q = query(techsRef, orderBy('name', 'asc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -80,7 +80,7 @@ const TechniciansPage = () => {
 
     try {
       if (editingTech) {
-        const techRef = doc(db, 'companies', userProfile.companyId, 'technicians', editingTech.id);
+        const techRef = doc(db, 'companies', currentUser.uid, 'technicians', editingTech.id);
         await updateDoc(techRef, {
           name: formData.name,
           email: formData.email,
@@ -101,19 +101,19 @@ const TechniciansPage = () => {
         // 2. Create user doc so AuthContext can load their profile
         await setDoc(doc(db, 'users', uid), {
           uid, email: formData.email, fullName: formData.name,
-          role: 'tech', companyId: userProfile.companyId,
+          role: 'tech', companyId: currentUser.uid,
           createdAt: new Date(), updatedAt: new Date()
         });
         // 3. Add to technicians subcollection
-        await addDoc(collection(db, 'companies', userProfile.companyId, 'technicians'), {
+        await addDoc(collection(db, 'companies', currentUser.uid, 'technicians'), {
           name: formData.name, fullName: formData.name,
           email: formData.email, phone: formData.phone,
-          status: 'available', companyId: userProfile.companyId,
+          status: 'available', companyId: currentUser.uid,
           authUid: uid, createdAt: new Date(), updatedAt: new Date()
         });
         // 4. Write techInvite backup
         await setDoc(doc(db, 'techInvites', formData.email), {
-          companyId: userProfile.companyId, name: formData.name, createdAt: new Date()
+          companyId: currentUser.uid, name: formData.name, createdAt: new Date()
         });
         toast.success('Technician account created!', { id: loadingToast });
         setCreatedTechInfo({ name: formData.name, email: formData.email, password: formData.password, loginUrl: window.location.origin + '/tech' });
@@ -136,7 +136,7 @@ const TechniciansPage = () => {
     const loadingToast = toast.loading('Deleting technician...');
 
     try {
-      await deleteDoc(doc(db, 'companies', userProfile.companyId, 'technicians', tech.id));
+      await deleteDoc(doc(db, 'companies', currentUser.uid, 'technicians', tech.id));
       toast.success('Technician deleted!', { id: loadingToast });
     } catch (error) {
       console.error('Error deleting tech:', error);
