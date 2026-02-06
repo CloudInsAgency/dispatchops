@@ -122,9 +122,13 @@ const LoginPage = () => {
                   <input type="checkbox" className="mr-2" />
                   <span className="text-sm text-gray-600">Remember me</span>
                 </label>
-                <a href="#" className="text-sm text-primary-600 hover:text-primary-700">
-                  Forgot password?
-                </a>
+                <button type="button" onClick={async () => {
+                    if (!formData.email) { setError('Please enter your email address first'); return; }
+                    try { await sendPasswordResetEmail(auth, formData.email); setError(''); alert('Password reset email sent! Check your inbox.'); }
+                    catch (e) { setError(e.code === 'auth/user-not-found' ? 'No account found with this email' : 'Failed to send reset email'); }
+                  }} className="text-sm text-primary-600 hover:text-primary-700">
+                    Forgot password?
+                  </button>
               </div>
 
               <button
