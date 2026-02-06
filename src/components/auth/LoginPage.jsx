@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FiTruck, FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import { auth } from '../../config/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 const LoginPage = () => {
   const navigate = useNavigate();
