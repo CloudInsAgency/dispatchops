@@ -15,18 +15,18 @@ const StatsCards = () => {
 
   // Live tech count from subcollection
   useEffect(() => {
-    if (!userProfile?.companyId) return;
-    const techRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+    if (!currentUser?.uid) return;
+    const techRef = collection(db, 'companies', currentUser.uid, 'technicians');
     const unsubscribe = onSnapshot(techRef, (snapshot) => {
       setStats(prev => ({ ...prev, activeTechnicians: snapshot.size }));
     });
     return () => unsubscribe();
-  }, [userProfile?.companyId]);
+  }, [currentUser?.uid]);
 
   // Job stats
   useEffect(() => {
-    if (!userProfile?.companyId) return;
-    const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+    if (!currentUser?.uid) return;
+    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
     const jobsQuery = query(jobsRef);
 
     const unsubscribe = onSnapshot(jobsQuery, (snapshot) => {
@@ -70,7 +70,7 @@ const StatsCards = () => {
     });
 
     return () => unsubscribe();
-  }, [userProfile?.companyId]);
+  }, [currentUser?.uid]);
 
   return (
     <div className="grid md:grid-cols-4 gap-6 mb-6">

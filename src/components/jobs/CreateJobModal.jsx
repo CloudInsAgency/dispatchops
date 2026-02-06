@@ -30,10 +30,10 @@ const CreateJobModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     const fetchTechnicians = async () => {
-      if (!userProfile?.companyId) return;
+      if (!currentUser?.uid) return;
       
       try {
-        const techRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+        const techRef = collection(db, 'companies', currentUser.uid, 'technicians');
         const snapshot = await getDocs(techRef);
         const techData = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -69,7 +69,7 @@ const CreateJobModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!userProfile?.companyId) return;
+    if (!currentUser?.uid) return;
 
     if (!canAddJob) {
       setShowUpgradeModal(true);
@@ -80,7 +80,7 @@ const CreateJobModal = ({ isOpen, onClose }) => {
     const loadingToast = toast.loading('Creating job...');
     
     try {
-      const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+      const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
       
       let scheduledDateTime = null;
       if (formData.scheduledDate && formData.scheduledTime) {

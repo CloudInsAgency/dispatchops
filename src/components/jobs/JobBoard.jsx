@@ -46,9 +46,9 @@ const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
 
   // Fetch jobs from Firestore
   useEffect(() => {
-    if (!userProfile?.companyId) return;
+    if (!currentUser?.uid) return;
 
-    const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
     const q = query(jobsRef, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -199,7 +199,7 @@ const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
     const job = jobs.find(j => j.id === jobId);
     if (job && job.status !== newStatus) {
       try {
-        const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', jobId);
+        const jobRef = doc(db, 'companies', currentUser.uid, 'jobs', jobId);
         await updateDoc(jobRef, {
           status: newStatus,
           updatedAt: new Date()

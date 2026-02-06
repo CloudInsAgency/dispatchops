@@ -18,8 +18,8 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
-    if (!userProfile?.companyId) return;
-    const techRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+    if (!currentUser?.uid) return;
+    const techRef = collection(db, 'companies', currentUser.uid, 'technicians');
     const q = query(techRef, orderBy('name', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const techData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -32,8 +32,8 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
 
   // Listen to active jobs for real-time tech status
   useEffect(() => {
-    if (!userProfile?.companyId) return;
-    const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+    if (!currentUser?.uid) return;
+    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
     const q = query(jobsRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const jobs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -77,9 +77,9 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
   };
 
   const handleSaveEdit = async (techId) => {
-    if (!userProfile?.companyId) return;
+    if (!currentUser?.uid) return;
     try {
-      const techRef = doc(db, 'companies', userProfile.companyId, 'technicians', techId);
+      const techRef = doc(db, 'companies', currentUser.uid, 'technicians', techId);
       await updateDoc(techRef, { ...editForm, updatedAt: new Date() });
       setEditingTech(null);
       alert('Technician updated successfully!');
@@ -92,7 +92,7 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
   const handleDelete = async (techId, techName) => {
     if (!window.confirm(`Are you sure you want to delete ${techName}?`)) return;
     try {
-      const techRef = doc(db, 'companies', userProfile.companyId, 'technicians', techId);
+      const techRef = doc(db, 'companies', currentUser.uid, 'technicians', techId);
       await deleteDoc(techRef);
       alert('Technician deleted successfully!');
     } catch (error) {

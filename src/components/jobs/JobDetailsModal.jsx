@@ -53,10 +53,10 @@ const JobDetailsModal = ({ isOpen, onClose, job }) => {
 
   useEffect(() => {
     const fetchTechnicians = async () => {
-      if (!userProfile?.companyId) return;
+      if (!currentUser?.uid) return;
       
       try {
-        const techRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+        const techRef = collection(db, 'companies', currentUser.uid, 'technicians');
         const snapshot = await getDocs(techRef);
         const techData = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -91,13 +91,13 @@ const JobDetailsModal = ({ isOpen, onClose, job }) => {
   };
 
   const handleSave = async () => {
-    if (!userProfile?.companyId || !job?.id) return;
+    if (!currentUser?.uid || !job?.id) return;
 
     setLoading(true);
     const loadingToast = toast.loading('Updating job...');
     
     try {
-      const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', job.id);
+      const jobRef = doc(db, 'companies', currentUser.uid, 'jobs', job.id);
       
       let scheduledDateTime = null;
       if (formData.scheduledDate && formData.scheduledTime) {
@@ -259,14 +259,14 @@ const JobDetailsModal = ({ isOpen, onClose, job }) => {
   };
 
   const handleDelete = async () => {
-    if (!userProfile?.companyId || !job?.id) return;
+    if (!currentUser?.uid || !job?.id) return;
     if (!window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) return;
 
     setLoading(true);
     const loadingToast = toast.loading('Deleting job...');
     
     try {
-      const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', job.id);
+      const jobRef = doc(db, 'companies', currentUser.uid, 'jobs', job.id);
       await deleteDoc(jobRef);
       toast.success('Job deleted successfully!', { id: loadingToast });
       onClose();
