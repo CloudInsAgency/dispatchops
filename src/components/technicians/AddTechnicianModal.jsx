@@ -3,6 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { collection, addDoc, setDoc, doc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { createTechAuthAccount } from '../../config/secondaryAuth';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 import { FiX, FiCopy, FiCheckCircle, FiUser, FiMail, FiLock } from 'react-icons/fi';
 
 const generatePassword = () => {
@@ -82,6 +84,9 @@ const AddTechnicianModal = ({ isOpen, onClose }) => {
       // 6. Show credentials
       setCredentials({ email: formData.email, password, name: formData.name });
       setStep('credentials');
+
+      // Send password reset email so tech can set their own password
+      try { await sendPasswordResetEmail(auth, formData.email); } catch (e) { console.log('Reset email skipped:', e); }
 
     } catch (error) {
       console.error('Error adding technician:', error);

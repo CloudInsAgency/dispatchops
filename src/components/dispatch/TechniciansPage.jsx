@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import { usePlanLimits } from '../../hooks/usePlanLimits';
 import UpgradeModal from '../subscription/UpgradeModal';
 import { createTechAuthAccount } from '../../config/secondaryAuth';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 
 const TechniciansPage = () => {
   const { userProfile, currentUser } = useAuth();
@@ -117,6 +119,9 @@ const TechniciansPage = () => {
         });
         toast.success('Technician account created!', { id: loadingToast });
         setCreatedTechInfo({ name: formData.name, email: formData.email, password: formData.password, loginUrl: window.location.origin + '/tech' });
+
+        // Send password reset email so tech can set their own password
+        try { await sendPasswordResetEmail(auth, formData.email); } catch (e) { console.log('Reset email skipped:', e); }
       }
 
       setShowModal(false);
