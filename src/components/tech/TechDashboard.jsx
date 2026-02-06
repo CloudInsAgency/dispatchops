@@ -217,7 +217,7 @@ const TechDashboard = () => {
       toast.success('Photos uploaded!', { id: loadingToast });
     } catch (error) {
       console.error('Error uploading photos:', error);
-      toast.error('Failed to upload photos', { id: loadingToast });
+      console.error('Photo upload error:', error.code, error.message); toast.error(`Failed to upload photos: ${error.code || error.message}`, { id: loadingToast });
     } finally { setUploading(false); }
   };
 
@@ -280,7 +280,7 @@ const TechDashboard = () => {
       const jobRef = doc(db, 'companies', userProfile.companyId, 'jobs', selectedJob.id);
       await updateDoc(jobRef, { signature: url, updatedAt: new Date() });
       toast.success('Signature saved!');
-    } catch (error) { console.error('Error saving signature:', error); toast.error('Failed to save signature'); }
+    } catch (error) { console.error('Signature save error:', error.code, error.message); toast.error(`Failed to save signature: ${error.code || error.message}`); }
   };
 
   const saveTechNotes = async () => {
