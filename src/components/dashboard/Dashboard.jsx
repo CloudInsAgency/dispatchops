@@ -7,7 +7,7 @@ import TechnicianSidebar from '../technicians/TechnicianSidebar';
 import StatsCards from './StatsCards';
 
 const Dashboard = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState(null);
   const [showTechSidebar, setShowTechSidebar] = useState(true);

@@ -9,7 +9,7 @@ import UpgradeModal from '../subscription/UpgradeModal';
 import { createTechAuthAccount } from '../../config/secondaryAuth';
 
 const TechniciansPage = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const { canAddTech, currentPlan, planDetails, techCount } = usePlanLimits(userProfile);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [techs, setTechs] = useState([]);

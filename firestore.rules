@@ -54,7 +54,7 @@ service cloud.firestore {
         && request.resource.data.companyId == resource.data.companyId;
 
       // Only allow creation during signup (auth uid must match doc id)
-      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && (request.auth.uid == userId || (isOwner() && request.resource.data.role == "tech"));
     }
 
     // ============================================

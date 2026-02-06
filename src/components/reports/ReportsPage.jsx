@@ -6,7 +6,7 @@ import { FiBarChart2, FiTrendingUp, FiClock, FiCheckCircle, FiUsers, FiCalendar,
 import toast from 'react-hot-toast';
 
 const ReportsPage = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,14 +14,14 @@ const ReportsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (!userProfile?.companyId) { setLoading(false); return; }
-    const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+    if (!currentUser?.uid) { setLoading(false); return; }
+    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
     const q = query(jobsRef, orderBy('createdAt', 'desc'));
     const unsub1 = onSnapshot(q, (snap) => {
       setJobs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setLoading(false);
     });
-    const techsRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+    const techsRef = collection(db, 'companies', currentUser.uid, 'technicians');
     const unsub2 = onSnapshot(techsRef, (snap) => {
       setTechs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });

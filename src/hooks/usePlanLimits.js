@@ -11,7 +11,7 @@ export const usePlanLimits = (userProfile) => {
   const [currentPlan, setCurrentPlan] = useState('starter');
 
   useEffect(() => {
-    if (!userProfile?.companyId) return;
+    if (!currentUser?.uid) return;
 
     const plan = userProfile?.subscription?.plan || 'starter';
     setCurrentPlan(plan);
@@ -28,7 +28,7 @@ export const usePlanLimits = (userProfile) => {
     const usersRef = collection(db, 'users');
     const usersQ = query(
       usersRef,
-      where('companyId', '==', userProfile.companyId),
+      where('companyId', '==', currentUser.uid),
       where('role', '==', 'tech')
     );
     const unsub1 = onSnapshot(usersQ, (snapshot) => {
@@ -36,7 +36,7 @@ export const usePlanLimits = (userProfile) => {
       updateTechLimits();
     });
 
-    const subRef = collection(db, 'companies', userProfile.companyId, 'technicians');
+    const subRef = collection(db, 'companies', currentUser.uid, 'technicians');
     const unsub2 = onSnapshot(subRef, (snapshot) => {
       subCount = snapshot.size;
       updateTechLimits();
@@ -47,7 +47,7 @@ export const usePlanLimits = (userProfile) => {
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthStart = Timestamp.fromDate(firstOfMonth);
 
-    const jobsRef = collection(db, 'companies', userProfile.companyId, 'jobs');
+    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
     const jobsQ = query(
       jobsRef,
       where('createdAt', '>=', monthStart)

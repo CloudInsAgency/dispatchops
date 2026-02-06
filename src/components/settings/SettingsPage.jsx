@@ -62,8 +62,8 @@ const SettingsPage = () => {
       await updateDoc(userRef, { fullName, updatedAt: new Date() });
 
       // Update company doc
-      if (userProfile.companyId) {
-        const companyRef = doc(db, 'companies', userProfile.companyId);
+      if (currentUser?.uid) {
+        const companyRef = doc(db, 'companies', currentUser.uid);
         await updateDoc(companyRef, {
           name: companyName,
           phone: companyPhone,
