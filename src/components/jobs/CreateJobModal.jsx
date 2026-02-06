@@ -9,7 +9,7 @@ import { getRecommendedUpgrade, getPlanById } from '../../config/stripe';
 import UpgradeModal from '../subscription/UpgradeModal';
 
 const CreateJobModal = ({ isOpen, onClose }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const { canAddJob, monthlyJobCount, currentPlan, planDetails } = usePlanLimits(userProfile);
   const [loading, setLoading] = useState(false);
   const [technicians, setTechnicians] = useState([]);

@@ -22,7 +22,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);

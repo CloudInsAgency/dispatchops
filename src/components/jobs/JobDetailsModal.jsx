@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import JobActivityLog from './JobActivityLog';
 
 const JobDetailsModal = ({ isOpen, onClose, job }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [technicians, setTechnicians] = useState([]);

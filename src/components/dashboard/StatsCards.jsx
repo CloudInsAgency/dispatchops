@@ -5,7 +5,7 @@ import { db } from '../../config/firebase';
 import { FiClipboard, FiUsers, FiBarChart2, FiClock } from 'react-icons/fi';
 
 const StatsCards = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const [stats, setStats] = useState({
     totalJobsToday: 0,
     activeTechnicians: 0,

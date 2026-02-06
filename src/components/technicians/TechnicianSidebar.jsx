@@ -8,7 +8,7 @@ import { usePlanLimits } from '../../hooks/usePlanLimits';
 import UpgradeModal from '../subscription/UpgradeModal';
 
 const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
   const [technicians, setTechnicians] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTech, setEditingTech] = useState(null);
