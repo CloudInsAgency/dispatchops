@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiTruck, FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
+import { auth } from '../../config/firebase';
 
 const LoginPage = () => {
   const navigate = useNavigate();
