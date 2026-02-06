@@ -73,7 +73,6 @@ const OnboardingFlow = () => {
     try {
       const companyId = currentUser.uid;
       
-      console.log("DEBUG job creation - companyId:", companyId, "uid:", currentUser?.uid, "userProfile:", JSON.stringify(userProfile));
       // Add job to Firestore
       await addDoc(collection(db, 'companies', companyId, 'jobs'), {
         customerName: jobData.customerName,
