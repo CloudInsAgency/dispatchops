@@ -23,7 +23,7 @@ const faqs = [
     { q: 'Can I set my business hours?', a: 'Yes, the Business Hours tab in Settings lets you configure your operating hours for each day of the week, including marking days as closed.' },
   ]},
   { category: 'Billing & Plans', icon: FiCreditCard, items: [
-    { q: 'What plans are available?', a: 'We offer three plans: Starter ($149.95/mo, up to 10 techs, 200 jobs/mo), Growth ($199.95/mo, up to 20 techs, 400 jobs/mo), and Professional ($275/mo, up to 40 techs, 800 jobs/mo).' },
+    { q: 'What plans are available?', a: 'We offer three plans: Starter ($99/mo, up to 10 techs, 200 jobs/mo), Growth ($149/mo, up to 20 techs, 400 jobs/mo), and Professional ($225/mo, up to 40 techs, 800 jobs/mo).' },
     { q: 'How do I upgrade my plan?', a: 'Go to the Billing page from the sidebar and click "Upgrade Plan". You\'ll be redirected to a secure Stripe checkout to complete the upgrade.' },
     { q: 'How do I cancel my subscription?', a: 'Go to the Billing page and click "Manage Subscription" to access the Stripe Customer Portal where you can cancel, update payment methods, or view invoices.' },
   ]},

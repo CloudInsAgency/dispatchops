@@ -14,7 +14,7 @@ export const PRICING_TIERS = [
     id: 'starter',
     name: 'Starter Plan',
     techRange: '1-10 technicians',
-    price: 149.95,
+    price: 99,
     maxTechnicians: 10,
     stripeProductId: 'price_starter_monthly', // You'll get this from Stripe
     features: [
@@ -31,7 +31,7 @@ export const PRICING_TIERS = [
     id: 'growth',
     name: 'Growth Plan',
     techRange: '11-20 technicians',
-    price: 199.95,
+    price: 149,
     maxTechnicians: 20,
     stripeProductId: 'price_growth_monthly', // You'll get this from Stripe
     features: [
@@ -49,7 +49,7 @@ export const PRICING_TIERS = [
     id: 'professional',
     name: 'Professional Plan',
     techRange: '21-40 technicians',
-    price: 275.00,
+    price: 225,
     maxTechnicians: 40,
     stripeProductId: 'price_professional_monthly', // You'll get this from Stripe
     features: [

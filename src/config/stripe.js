@@ -6,7 +6,7 @@ export const PLANS = {
   starter: {
     id: 'starter',
     name: 'Starter Plan',
-    price: 149.95,
+    price: 99,
     priceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID,
     techLimit: 10,
     jobLimit: 200,
@@ -22,7 +22,7 @@ export const PLANS = {
   growth: {
     id: 'growth',
     name: 'Growth Plan',
-    price: 199.95,
+    price: 149,
     priceId: import.meta.env.VITE_STRIPE_GROWTH_PRICE_ID,
     techLimit: 20,
     jobLimit: 400,
@@ -39,7 +39,7 @@ export const PLANS = {
   professional: {
     id: 'professional',
     name: 'Professional Plan',
-    price: 275,
+    price: 225,
     priceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID,
     techLimit: 40,
     jobLimit: 800,

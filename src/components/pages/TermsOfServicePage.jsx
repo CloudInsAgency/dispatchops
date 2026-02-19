@@ -33,7 +33,7 @@ const TermsOfServicePage = () => {
           <p>You must provide accurate and complete information when creating an account. You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account. You must be at least 18 years old to use the Service.</p>
 
           <h2 className="text-xl font-bold text-gray-900">4. Subscription and Payment</h2>
-          <p>The Service is offered on a monthly subscription basis. Plans include Starter ($149.95/month), Growth ($199.95/month), and Professional ($275/month). A 14-day free trial is provided for new accounts. After the trial period, your selected plan will be billed monthly via Stripe. You may cancel at any time through the Billing page. Cancellations take effect at the end of the current billing period.</p>
+          <p>The Service is offered on a monthly subscription basis. Plans include Starter ($99/month), Growth ($149/month), and Professional ($225/month). A 14-day free trial is provided for new accounts. After the trial period, your selected plan will be billed monthly via Stripe. You may cancel at any time through the Billing page. Cancellations take effect at the end of the current billing period.</p>
 
           <h2 className="text-xl font-bold text-gray-900">5. Acceptable Use</h2>
           <p>You agree not to: use the Service for any unlawful purpose, attempt to gain unauthorized access to other accounts or systems, interfere with or disrupt the Service, upload malicious code or content, resell or redistribute the Service without authorization, or use the Service to store or transmit content that infringes on third-party rights.</p>

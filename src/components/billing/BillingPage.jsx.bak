@@ -22,7 +22,7 @@ const BillingPage = () => {
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Current Plan</h2>
             <p className="text-3xl font-bold text-primary-600 mt-2">{planDetails?.name || 'Starter Plan'}</p>
-            <p className="text-gray-600 mt-1">${planDetails?.price || 149.95}/month</p>
+            <p className="text-gray-600 mt-1">${planDetails?.price || 99}/month</p>
           </div>
           {upgradePlan && (
             <button onClick={() => setShowUpgradeModal(true)} className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition flex items-center gap-2">
