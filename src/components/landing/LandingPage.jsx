@@ -51,7 +51,7 @@ const LandingPage = () => {
                 Start 14-Day Free Trial
               </Link>
               <a 
-                href="https://youtu.be/PG-5KhLoakA"
+                href="https://youtu.be/Ha8-2Tj_o10"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white text-primary-600 px-8 py-4 rounded-lg text-lg font-semibold border-2 border-primary-600 hover:bg-primary-50 transition"
