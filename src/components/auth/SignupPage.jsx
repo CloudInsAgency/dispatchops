@@ -63,7 +63,7 @@ const SignupPage = () => {
         ...formData,
         subscription: {
           plan: 'starter',
-          techLimit: 10,
+          techLimit: 5,
           jobLimit: null,
           status: 'active',
           stripeCustomerId: '',

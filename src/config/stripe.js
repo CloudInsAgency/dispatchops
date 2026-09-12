@@ -8,10 +8,10 @@ export const PLANS = {
     name: 'Starter Plan',
     price: 99,
     priceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID,
-    techLimit: 10,
+    techLimit: 5,
     jobLimit: null, // unlimited — see canCreateJob
     features: [
-      'Up to 10 technicians',
+      'Up to 5 technicians',
       'Unlimited jobs',
       'Real-time dispatch board',
       'Technician mobile dashboard',
@@ -24,10 +24,10 @@ export const PLANS = {
     name: 'Growth Plan',
     price: 149,
     priceId: import.meta.env.VITE_STRIPE_GROWTH_PRICE_ID,
-    techLimit: 20,
+    techLimit: 10,
     jobLimit: null, // unlimited — see canCreateJob
     features: [
-      'Up to 20 technicians',
+      'Up to 10 technicians',
       'Unlimited jobs',
       'Everything in Starter',
       'Advanced reporting',

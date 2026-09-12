@@ -182,7 +182,7 @@ const TechniciansPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Technicians</h1>
           <p className="text-gray-600 mt-1">
-            Manage your field technicians ({techs.length}/{planDetails?.techLimit || 10} on {planDetails?.name || 'Starter Plan'})
+            Manage your field technicians ({techs.length}/{planDetails?.techLimit || 5} on {planDetails?.name || 'Starter Plan'})
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -414,7 +414,7 @@ const TechniciansPage = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         currentPlan={currentPlan}
-        reason={`You've reached your plan limit of ${planDetails?.techLimit || 10} technicians. Upgrade to add more technicians.`}
+        reason={`You've reached your plan limit of ${planDetails?.techLimit || 5} technicians. Upgrade to add more technicians.`}
       />
     </div>
   );

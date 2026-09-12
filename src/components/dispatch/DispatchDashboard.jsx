@@ -39,7 +39,7 @@ const DispatchDashboard = () => {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                {planDetails?.name || 'Starter Plan'} — {techCount}/{planDetails?.techLimit || 10} techs
+                {planDetails?.name || 'Starter Plan'} — {techCount}/{planDetails?.techLimit || 5} techs
               </span>
               <button
                 onClick={() => navigate('/dispatch/technicians')}
@@ -102,7 +102,7 @@ const DispatchDashboard = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         currentPlan={currentPlan}
-        reason={`You've reached your plan limit of ${planDetails?.techLimit || 10} technicians. Upgrade to add more technicians.`}
+        reason={`You've reached your plan limit of ${planDetails?.techLimit || 5} technicians. Upgrade to add more technicians.`}
       />
     </div>
   );

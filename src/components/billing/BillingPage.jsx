@@ -116,12 +116,12 @@ const BillingPage = () => {
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-600">Technicians</span>
-              <span className="font-medium">{techCount} / {planDetails?.techLimit || 10}</span>
+              <span className="font-medium">{techCount} / {planDetails?.techLimit || 5}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className={`h-2 rounded-full transition-all ${(techCount / (planDetails?.techLimit || 10)) >= 0.9 ? 'bg-red-500' : 'bg-primary-600'}`} style={{ width: `${Math.min((techCount / (planDetails?.techLimit || 10)) * 100, 100)}%` }} />
+              <div className={`h-2 rounded-full transition-all ${(techCount / (planDetails?.techLimit || 5)) >= 0.9 ? 'bg-red-500' : 'bg-primary-600'}`} style={{ width: `${Math.min((techCount / (planDetails?.techLimit || 5)) * 100, 100)}%` }} />
             </div>
-            {(techCount / (planDetails?.techLimit || 10)) >= 0.9 && <p className="text-xs text-red-500 mt-1">Approaching limit</p>}
+            {(techCount / (planDetails?.techLimit || 5)) >= 0.9 && <p className="text-xs text-red-500 mt-1">Approaching limit</p>}
           </div>
           <div>
             <div className="flex justify-between text-sm mb-2">

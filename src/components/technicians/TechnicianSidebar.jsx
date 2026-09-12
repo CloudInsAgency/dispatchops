@@ -118,7 +118,7 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
             </button>
           </div>
           <p className="text-xs text-gray-500 mb-3">
-            {technicians.length}/{planDetails?.techLimit || 10} on {planDetails?.name || 'Starter Plan'}
+            {technicians.length}/{planDetails?.techLimit || 5} on {planDetails?.name || 'Starter Plan'}
           </p>
           <div className="flex gap-2">
             <button
@@ -217,7 +217,7 @@ const TechnicianSidebar = ({ onTechnicianSelect, selectedTechnicianId }) => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         currentPlan={currentPlan}
-        reason={`You've reached your plan limit of ${planDetails?.techLimit || 10} technicians. Upgrade to add more.`}
+        reason={`You've reached your plan limit of ${planDetails?.techLimit || 5} technicians. Upgrade to add more.`}
       />
     </>
   );

@@ -230,7 +230,7 @@ const OnboardingFlow = () => {
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-800">
-                💡 Your Starter Plan includes up to 10 technicians. You can add them anytime from the Technicians page.
+                💡 Your Starter Plan includes up to 5 technicians. You can add them anytime from the Technicians page.
               </p>
             </div>
 

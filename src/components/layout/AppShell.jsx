@@ -65,7 +65,7 @@ const AppShell = ({ children }) => {
             <div className="mt-2 space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500">Technicians</span>
-                <span className="font-medium text-gray-700">{techCount}/{planDetails?.techLimit || 10}</span>
+                <span className="font-medium text-gray-700">{techCount}/{planDetails?.techLimit || 5}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500">Jobs this month</span>
