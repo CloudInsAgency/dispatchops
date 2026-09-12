@@ -5,6 +5,7 @@ import JobBoard from '../jobs/JobBoard';
 import CreateJobModal from '../jobs/CreateJobModal';
 import TechnicianSidebar from '../technicians/TechnicianSidebar';
 import StatsCards from './StatsCards';
+import BoardMapPanel from '../map/BoardMapPanel';
 
 const Dashboard = () => {
   const { userProfile, currentUser } = useAuth();
@@ -48,6 +49,7 @@ const Dashboard = () => {
         )}
         <div className="flex-1 overflow-auto p-6">
           <StatsCards />
+          <BoardMapPanel />
           <div className="bg-white rounded-lg shadow mt-6 p-6">
             <JobBoard onCreateJob={() => setShowCreateJobModal(true)} selectedTechnicianId={selectedTechnicianId} />
           </div>
