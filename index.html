@@ -99,6 +99,9 @@
       tailwind.config = {
         theme: {
           extend: {
+            /* Small phones. The hero headline needs one step below Tailwind's
+               default `sm` (640px) or it overflows a 390px viewport. */
+            screens: { xs: '420px' },
             colors: {
               primary: {
                 50: '#eff6ff',
@@ -111,6 +114,14 @@
                 700: '#1d4ed8',
                 800: '#1e40af',
                 900: '#1e3a8a',
+              },
+              /* Sampled from public/logo.png so the page, the favicon and
+                 the social card all agree on one palette. */
+              brand: {
+                navy: '#21518B',
+                navyDark: '#1A4070',
+                amber: '#F3BA5A',
+                amberDark: '#C8912F',
               },
             }
           }
