@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyId } from '../../hooks/useCompanyId';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FiClipboard, FiUsers, FiBarChart2, FiClock } from 'react-icons/fi';
 
 const StatsCards = () => {
   const { userProfile, currentUser } = useAuth();
+  const companyId = useCompanyId();
   const [stats, setStats] = useState({
     totalJobsToday: 0,
     activeTechnicians: 0,
@@ -15,8 +17,8 @@ const StatsCards = () => {
 
   // Live tech count from subcollection
   useEffect(() => {
-    if (!currentUser?.uid) return;
-    const techRef = collection(db, 'companies', currentUser.uid, 'technicians');
+    if (!companyId) return;
+    const techRef = collection(db, 'companies', companyId, 'technicians');
     const unsubscribe = onSnapshot(techRef, (snapshot) => {
       setStats(prev => ({ ...prev, activeTechnicians: snapshot.size }));
     });
@@ -25,8 +27,8 @@ const StatsCards = () => {
 
   // Job stats
   useEffect(() => {
-    if (!currentUser?.uid) return;
-    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
+    if (!companyId) return;
+    const jobsRef = collection(db, 'companies', companyId, 'jobs');
     const jobsQuery = query(jobsRef);
 
     const unsubscribe = onSnapshot(jobsQuery, (snapshot) => {

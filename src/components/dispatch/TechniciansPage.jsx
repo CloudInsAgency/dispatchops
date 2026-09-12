@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyId } from '../../hooks/useCompanyId';
 import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, orderBy, setDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiCheckCircle, FiClock, FiCopy, FiEye, FiEyeOff, FiLink } from 'react-icons/fi';
@@ -12,6 +13,7 @@ import { auth } from '../../config/firebase';
 
 const TechniciansPage = () => {
   const { userProfile, currentUser } = useAuth();
+  const companyId = useCompanyId();
   const { canAddTech, currentPlan, planDetails, techCount } = usePlanLimits(userProfile);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [techs, setTechs] = useState([]);
@@ -35,7 +37,7 @@ const TechniciansPage = () => {
     }
 
     // Read from companies/{companyId}/technicians - same as TechnicianSidebar
-    const techsRef = collection(db, 'companies', currentUser.uid, 'technicians');
+    const techsRef = collection(db, 'companies', companyId, 'technicians');
     const q = query(techsRef, orderBy('name', 'asc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -82,7 +84,7 @@ const TechniciansPage = () => {
 
     try {
       if (editingTech) {
-        const techRef = doc(db, 'companies', currentUser.uid, 'technicians', editingTech.id);
+        const techRef = doc(db, 'companies', companyId, 'technicians', editingTech.id);
         await updateDoc(techRef, {
           name: formData.name,
           email: formData.email,
@@ -107,7 +109,7 @@ const TechniciansPage = () => {
           createdAt: new Date(), updatedAt: new Date()
         });
         // 3. Add to technicians subcollection
-        await addDoc(collection(db, 'companies', currentUser.uid, 'technicians'), {
+        await addDoc(collection(db, 'companies', companyId, 'technicians'), {
           name: formData.name, fullName: formData.name,
           email: formData.email, phone: formData.phone,
           status: 'available', companyId: currentUser.uid,
@@ -141,7 +143,7 @@ const TechniciansPage = () => {
     const loadingToast = toast.loading('Deleting technician...');
 
     try {
-      await deleteDoc(doc(db, 'companies', currentUser.uid, 'technicians', tech.id));
+      await deleteDoc(doc(db, 'companies', companyId, 'technicians', tech.id));
       toast.success('Technician deleted!', { id: loadingToast });
     } catch (error) {
       console.error('Error deleting tech:', error);

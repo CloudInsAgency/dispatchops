@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyId } from '../../hooks/useCompanyId';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FiUser, FiSettings, FiClock, FiMapPin, FiSave, FiCheck } from 'react-icons/fi';
@@ -14,6 +15,7 @@ const defaultHours = DAYS.reduce((acc, day) => {
 
 const SettingsPage = () => {
   const { userProfile, loadUserProfile, currentUser } = useAuth();
+  const companyId = useCompanyId();
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
 
@@ -63,7 +65,7 @@ const SettingsPage = () => {
 
       // Update company doc
       if (currentUser?.uid) {
-        const companyRef = doc(db, 'companies', currentUser.uid);
+        const companyRef = doc(db, 'companies', companyId);
         await updateDoc(companyRef, {
           name: companyName,
           phone: companyPhone,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyId } from '../../hooks/useCompanyId';
 import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FiX, FiAlertTriangle } from 'react-icons/fi';
@@ -10,6 +11,7 @@ import UpgradeModal from '../subscription/UpgradeModal';
 
 const CreateJobModal = ({ isOpen, onClose }) => {
   const { userProfile, currentUser } = useAuth();
+  const companyId = useCompanyId();
   const { canAddJob, monthlyJobCount, currentPlan, planDetails } = usePlanLimits(userProfile);
   const [loading, setLoading] = useState(false);
   const [technicians, setTechnicians] = useState([]);
@@ -17,7 +19,11 @@ const CreateJobModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
-    address: '',
+    street: '',
+    unit: '',
+    city: '',
+    state: '',
+    zip: '',
     jobType: 'installation',
     priority: 'medium',
     assignedTo: '',
@@ -30,10 +36,10 @@ const CreateJobModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     const fetchTechnicians = async () => {
-      if (!currentUser?.uid) return;
+      if (!companyId) return;
       
       try {
-        const techRef = collection(db, 'companies', currentUser.uid, 'technicians');
+        const techRef = collection(db, 'companies', companyId, 'technicians');
         const snapshot = await getDocs(techRef);
         const techData = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -48,10 +54,11 @@ const CreateJobModal = ({ isOpen, onClose }) => {
     if (isOpen) {
       fetchTechnicians();
     }
-  }, [isOpen, userProfile]);
+  }, [isOpen, companyId]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    const value = name === 'state' ? e.target.value.toUpperCase() : e.target.value;
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -69,7 +76,7 @@ const CreateJobModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentUser?.uid) return;
+    if (!companyId) return;
 
     if (!canAddJob) {
       setShowUpgradeModal(true);
@@ -80,7 +87,7 @@ const CreateJobModal = ({ isOpen, onClose }) => {
     const loadingToast = toast.loading('Creating job...');
     
     try {
-      const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
+      const jobsRef = collection(db, 'companies', companyId, 'jobs');
       
       let scheduledDateTime = null;
       if (formData.scheduledDate && formData.scheduledTime) {
@@ -92,7 +99,19 @@ const CreateJobModal = ({ isOpen, onClose }) => {
       await addDoc(jobsRef, {
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
-        address: formData.address,
+        // `address` stays as the composed single line because the board,
+        // job details and the tech app all read that field. The parts are
+        // stored alongside it for sorting, filtering and mapping.
+        address: [
+          [formData.street, formData.unit].filter(Boolean).join(' '),
+          formData.city,
+          [formData.state, formData.zip].filter(Boolean).join(' '),
+        ].filter(Boolean).join(', '),
+        street: formData.street,
+        unit: formData.unit,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
         jobType: formData.jobType,
         priority: formData.priority,
         assignedTo: formData.assignedTo,
@@ -101,11 +120,11 @@ const CreateJobModal = ({ isOpen, onClose }) => {
         notes: formData.notes,
         status: formData.status,
         createdAt: serverTimestamp(),
-        createdBy: userProfile.uid,
+        createdBy: userProfile?.uid || currentUser?.uid || null,
         updatedAt: serverTimestamp(),
         activityLog: [{
           type: 'created',
-          userName: userProfile.fullName || 'System',
+          userName: userProfile?.fullName || 'System',
           timestamp: new Date()
         }]
       });
@@ -113,7 +132,11 @@ const CreateJobModal = ({ isOpen, onClose }) => {
       setFormData({
         customerName: '',
         customerPhone: '',
-        address: '',
+        street: '',
+        unit: '',
+        city: '',
+        state: '',
+        zip: '',
         jobType: 'installation',
         priority: 'medium',
         assignedTo: '',
@@ -128,7 +151,12 @@ const CreateJobModal = ({ isOpen, onClose }) => {
       onClose();
     } catch (error) {
       console.error('Error creating job:', error);
-      toast.error('Failed to create job', { id: loadingToast });
+      // Report the reason. A bare "Failed to create job" gave no way to tell a
+      // permission problem from a dropped connection.
+      const msg = error?.code === 'permission-denied'
+        ? 'You do not have permission to create jobs for this company.'
+        : (error?.message || 'Failed to create job');
+      toast.error(msg, { id: loadingToast, duration: 6000 });
     } finally {
       setLoading(false);
     }
@@ -224,18 +252,88 @@ const CreateJobModal = ({ isOpen, onClose }) => {
                   />
                 </div>
               </div>
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Service Address *</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
-                  disabled={!canAddJob}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="123 Main St, City, State 12345"
-                />
+              {/* Address is captured in parts so it can be sorted, filtered
+                  and handed to a mapping app later. A single free-text line
+                  cannot be parsed back apart reliably. */}
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Street Address *</label>
+                  <input
+                    type="text"
+                    name="street"
+                    value={formData.street}
+                    onChange={handleInputChange}
+                    required
+                    disabled={!canAddJob}
+                    autoComplete="address-line1"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="123 Main St"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Apt / Suite / Unit <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="unit"
+                    value={formData.unit}
+                    onChange={handleInputChange}
+                    disabled={!canAddJob}
+                    autoComplete="address-line2"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="Apt 4B"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
+                  <div className="sm:col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      required
+                      disabled={!canAddJob}
+                      autoComplete="address-level2"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      placeholder="West Orange"
+                    />
+                  </div>
+                  <div className="sm:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">State *</label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      required
+                      disabled={!canAddJob}
+                      autoComplete="address-level1"
+                      maxLength={2}
+                      style={{ textTransform: 'uppercase' }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      placeholder="NJ"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code *</label>
+                    <input
+                      type="text"
+                      name="zip"
+                      value={formData.zip}
+                      onChange={handleInputChange}
+                      required
+                      disabled={!canAddJob}
+                      autoComplete="postal-code"
+                      inputMode="numeric"
+                      pattern="\d{5}(-\d{4})?"
+                      title="Five digits, or ZIP+4 as 12345-6789"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-600 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      placeholder="07052"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

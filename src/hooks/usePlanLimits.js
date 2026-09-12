@@ -1,4 +1,5 @@
 import { useAuth } from "../contexts/AuthContext";
+import { useCompanyId } from './useCompanyId';
 import { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -6,6 +7,7 @@ import { canAddTechnician, canCreateJob, getPlanById } from '../config/stripe';
 
 export const usePlanLimits = (userProfile) => {
   const { currentUser } = useAuth();
+  const companyId = useCompanyId();
   const [techCount, setTechCount] = useState(0);
   const [monthlyJobCount, setMonthlyJobCount] = useState(0);
   const [canAddTech, setCanAddTech] = useState(true);
@@ -13,7 +15,7 @@ export const usePlanLimits = (userProfile) => {
   const [currentPlan, setCurrentPlan] = useState('starter');
 
   useEffect(() => {
-    if (!currentUser?.uid) return;
+    if (!companyId) return;
 
     const plan = userProfile?.subscription?.plan || 'starter';
     setCurrentPlan(plan);
@@ -30,7 +32,7 @@ export const usePlanLimits = (userProfile) => {
     const usersRef = collection(db, 'users');
     const usersQ = query(
       usersRef,
-      where('companyId', '==', currentUser.uid),
+      where('companyId', '==', companyId),
       where('role', '==', 'tech')
     );
     const unsub1 = onSnapshot(usersQ, (snapshot) => {
@@ -38,7 +40,7 @@ export const usePlanLimits = (userProfile) => {
       updateTechLimits();
     });
 
-    const subRef = collection(db, 'companies', currentUser.uid, 'technicians');
+    const subRef = collection(db, 'companies', companyId, 'technicians');
     const unsub2 = onSnapshot(subRef, (snapshot) => {
       subCount = snapshot.size;
       updateTechLimits();
@@ -49,7 +51,7 @@ export const usePlanLimits = (userProfile) => {
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthStart = Timestamp.fromDate(firstOfMonth);
 
-    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
+    const jobsRef = collection(db, 'companies', companyId, 'jobs');
     const jobsQ = query(
       jobsRef,
       where('createdAt', '>=', monthStart)
@@ -61,7 +63,10 @@ export const usePlanLimits = (userProfile) => {
     });
 
     return () => { unsub1(); unsub2(); unsub3(); };
-  }, [userProfile]);
+    // companyId belongs here: on a hard refresh it resolves a tick after the
+    // profile, and without it the listeners stayed bound to the first (null)
+    // value and the counts never populated.
+  }, [userProfile, companyId]);
 
   return {
     techCount,

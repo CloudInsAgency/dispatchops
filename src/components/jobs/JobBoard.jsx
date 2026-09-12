@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyId } from '../../hooks/useCompanyId';
 import { collection, query, onSnapshot, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FiPlus, FiUser, FiMapPin, FiAlertCircle, FiCalendar } from 'react-icons/fi';
@@ -23,6 +24,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
   const { userProfile, currentUser } = useAuth();
+  const companyId = useCompanyId();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -46,9 +48,9 @@ const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
 
   // Fetch jobs from Firestore
   useEffect(() => {
-    if (!currentUser?.uid) return;
+    if (!companyId) return;
 
-    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
+    const jobsRef = collection(db, 'companies', companyId, 'jobs');
     const q = query(jobsRef, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -199,7 +201,7 @@ const JobBoard = ({ onCreateJob, selectedTechnicianId }) => {
     const job = jobs.find(j => j.id === jobId);
     if (job && job.status !== newStatus) {
       try {
-        const jobRef = doc(db, 'companies', currentUser.uid, 'jobs', jobId);
+        const jobRef = doc(db, 'companies', companyId, 'jobs', jobId);
         await updateDoc(jobRef, {
           status: newStatus,
           updatedAt: new Date()

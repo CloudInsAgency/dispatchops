@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyId } from '../../hooks/useCompanyId';
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FiBarChart2, FiTrendingUp, FiClock, FiCheckCircle, FiUsers, FiCalendar, FiDownload, FiAlertTriangle } from 'react-icons/fi';
@@ -7,26 +8,51 @@ import toast from 'react-hot-toast';
 
 const ReportsPage = () => {
   const { userProfile, currentUser } = useAuth();
+  const companyId = useCompanyId();
   const [jobs, setJobs] = useState([]);
   const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [dateRange, setDateRange] = useState('30');
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    if (!currentUser?.uid) { setLoading(false); return; }
-    const jobsRef = collection(db, 'companies', currentUser.uid, 'jobs');
+    if (!companyId) { setLoading(false); return; }
+    setLoading(true);
+    setLoadError('');
+
+    const jobsRef = collection(db, 'companies', companyId, 'jobs');
     const q = query(jobsRef, orderBy('createdAt', 'desc'));
-    const unsub1 = onSnapshot(q, (snap) => {
-      setJobs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setLoading(false);
-    });
-    const techsRef = collection(db, 'companies', currentUser.uid, 'technicians');
-    const unsub2 = onSnapshot(techsRef, (snap) => {
-      setTechs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+
+    // Both listeners need an error handler. Without one, a rejected query
+    // (which is what a wrong companyId produced) left `loading` true forever
+    // and the page sat on "Loading reports..." with nothing to explain it.
+    const unsub1 = onSnapshot(
+      q,
+      (snap) => {
+        setJobs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Reports: jobs listener failed', err);
+        setLoadError(
+          err?.code === 'permission-denied'
+            ? 'You do not have permission to view reports for this company.'
+            : 'Could not load reports. Check your connection and try again.'
+        );
+        setLoading(false);
+      }
+    );
+
+    const techsRef = collection(db, 'companies', companyId, 'technicians');
+    const unsub2 = onSnapshot(
+      techsRef,
+      (snap) => setTechs(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      (err) => console.error('Reports: technicians listener failed', err)
+    );
+
     return () => { unsub1(); unsub2(); };
-  }, [userProfile]);
+  }, [companyId]);
 
   const filteredJobs = useMemo(() => {
     if (dateRange === 'all') return jobs;
@@ -142,7 +168,51 @@ const ReportsPage = () => {
     </div>
   );
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="text-gray-600">Loading reports...</div></div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-600">Loading reports…</div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6">
+        <div className="max-w-md mx-auto mt-16 text-center">
+          <FiAlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900">Reports are unavailable</h2>
+          <p className="mt-2 text-[15px] text-gray-600">{loadError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* Nothing to report on yet is a normal state, not a failure. Say so, and
+     point at the action that fixes it, rather than sitting on a spinner. */
+  if (jobs.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="max-w-md mx-auto mt-16 text-center">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 mb-5">
+            <FiBarChart2 className="h-6 w-6 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900">No reports yet</h2>
+          <p className="mt-2 text-[15px] text-gray-600 leading-relaxed">
+            Reports are built from your completed jobs. Once you have created
+            and dispatched a few, completion rates, technician performance and
+            job-type breakdowns will appear here.
+          </p>
+          <a
+            href="/dashboard"
+            className="mt-6 inline-block bg-primary-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-primary-700 transition"
+          >
+            Go to the dispatch board
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">

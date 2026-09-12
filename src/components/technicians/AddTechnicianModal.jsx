@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyId } from '../../hooks/useCompanyId';
 import { collection, addDoc, setDoc, doc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { createTechAuthAccount } from '../../config/secondaryAuth';
@@ -16,9 +16,16 @@ const generatePassword = () => {
   return password;
 };
 
+// Built from the browser's own origin so it always points at wherever the
+// app is actually running. It was hardcoded to an old preview deployment.
+const techLoginUrl = typeof window !== 'undefined'
+  ? `${window.location.origin}/tech`
+  : 'https://www.clouddispatchops.com/tech';
+
 const AddTechnicianModal = ({ isOpen, onClose }) => {
-  const { userProfile, currentUser } = useAuth();
+  const companyId = useCompanyId();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [step, setStep] = useState('form'); // 'form' or 'credentials'
   const [credentials, setCredentials] = useState(null);
   const [copied, setCopied] = useState({});
@@ -32,6 +39,7 @@ const AddTechnicianModal = ({ isOpen, onClose }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError('');
   };
 
   const handleCopy = (field, value) => {
@@ -42,7 +50,10 @@ const AddTechnicianModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const companyId = currentUser?.uid || userProfile?.companyId;
+    // The profile's companyId is authoritative. This previously preferred
+    // currentUser.uid, which is only the company id when the caller is the
+    // owner — for anyone else it wrote to a company that does not exist and
+    // the rules rejected it, after the auth account had already been created.
     if (!companyId) return;
 
     setLoading(true);
@@ -88,12 +99,23 @@ const AddTechnicianModal = ({ isOpen, onClose }) => {
       // Send password reset email so tech can set their own password
       try { await sendPasswordResetEmail(auth, formData.email); } catch (e) { console.log('Reset email skipped:', e); }
 
-    } catch (error) {
-      console.error('Error adding technician:', error);
-      if (error.code === 'auth/email-already-in-use') {
-        alert('This email is already registered. Please use a different email.');
+    } catch (err) {
+      console.error('Error adding technician:', err);
+      // Say what actually went wrong. "Failed to add technician. Please try
+      // again." hid a permission denial behind advice that could never work,
+      // and retrying made it worse each time by leaving another orphaned
+      // Firebase Auth account behind.
+      const code = err?.code || '';
+      if (code === 'auth/email-already-in-use') {
+        setError('That email already has an account. Use a different address, or remove the existing technician first.');
+      } else if (code === 'auth/invalid-email') {
+        setError('That email address is not valid.');
+      } else if (code === 'auth/weak-password' || code === 'auth/password-does-not-meet-requirements') {
+        setError('Could not generate an acceptable password. Check the password policy in Firebase Authentication.');
+      } else if (code === 'permission-denied') {
+        setError('You do not have permission to add technicians to this company. Only the account owner can.');
       } else {
-        alert('Failed to add technician. Please try again.');
+        setError(err?.message || 'Could not add the technician. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -102,6 +124,7 @@ const AddTechnicianModal = ({ isOpen, onClose }) => {
 
   const handleClose = () => {
     setStep('form');
+    setError('');
     setCredentials(null);
     setCopied({});
     setFormData({ name: '', email: '', phone: '', status: 'available' });
@@ -125,6 +148,11 @@ const AddTechnicianModal = ({ isOpen, onClose }) => {
 
         {step === 'form' ? (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {error && (
+              <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {error}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
               <input type="text" name="name" value={formData.name} onChange={handleInputChange} required
@@ -210,8 +238,10 @@ const AddTechnicianModal = ({ isOpen, onClose }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">Tech Login URL</label>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-sm break-all">dispatchops-three.vercel.app/tech</code>
-                  <button onClick={() => handleCopy('url', 'https://dispatchops-three.vercel.app/tech')}
+                  <code className="flex-1 bg-gray-100 px-3 py-2 rounded text-sm break-all">
+                    {techLoginUrl.replace(/^https?:\/\//, '')}
+                  </code>
+                  <button onClick={() => handleCopy('url', techLoginUrl)}
                     className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition flex items-center gap-1">
                     {copied.url ? <><FiCheckCircle className="text-green-600" /> Copied</> : <><FiCopy /> Copy</>}
                   </button>

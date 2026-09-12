@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCompanyId } from '../../hooks/useCompanyId';
 import { doc, updateDoc, deleteDoc, collection, getDocs, arrayUnion } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { FiX, FiEdit2, FiTrash2, FiSave } from 'react-icons/fi';
@@ -8,6 +9,7 @@ import JobActivityLog from './JobActivityLog';
 
 const JobDetailsModal = ({ isOpen, onClose, job }) => {
   const { userProfile, currentUser } = useAuth();
+  const companyId = useCompanyId();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [technicians, setTechnicians] = useState([]);
@@ -53,10 +55,10 @@ const JobDetailsModal = ({ isOpen, onClose, job }) => {
 
   useEffect(() => {
     const fetchTechnicians = async () => {
-      if (!currentUser?.uid) return;
+      if (!companyId) return;
       
       try {
-        const techRef = collection(db, 'companies', currentUser.uid, 'technicians');
+        const techRef = collection(db, 'companies', companyId, 'technicians');
         const snapshot = await getDocs(techRef);
         const techData = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -97,7 +99,7 @@ const JobDetailsModal = ({ isOpen, onClose, job }) => {
     const loadingToast = toast.loading('Updating job...');
     
     try {
-      const jobRef = doc(db, 'companies', currentUser.uid, 'jobs', job.id);
+      const jobRef = doc(db, 'companies', companyId, 'jobs', job.id);
       
       let scheduledDateTime = null;
       if (formData.scheduledDate && formData.scheduledTime) {
@@ -266,7 +268,7 @@ const JobDetailsModal = ({ isOpen, onClose, job }) => {
     const loadingToast = toast.loading('Deleting job...');
     
     try {
-      const jobRef = doc(db, 'companies', currentUser.uid, 'jobs', job.id);
+      const jobRef = doc(db, 'companies', companyId, 'jobs', job.id);
       await deleteDoc(jobRef);
       toast.success('Job deleted successfully!', { id: loadingToast });
       onClose();
