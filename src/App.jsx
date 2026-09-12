@@ -22,8 +22,10 @@ import AboutPage from './components/pages/AboutPage';
 import PrivacyPolicyPage from './components/pages/PrivacyPolicyPage';
 import TermsOfServicePage from './components/pages/TermsOfServicePage';
 
+// Owner-only. Everything inside writes to companies/{id}/... which
+// firestore.rules restricts to the company owner.
 const AdminLayout = ({ children }) => (
-  <ProtectedRoute>
+  <ProtectedRoute requireRole="owner">
     <TrialGate>
       <AppShell>{children}</AppShell>
     </TrialGate>
@@ -31,7 +33,7 @@ const AdminLayout = ({ children }) => (
 );
 
 const AdminLayoutNoGate = ({ children }) => (
-  <ProtectedRoute>
+  <ProtectedRoute requireRole="owner">
     <AppShell>{children}</AppShell>
   </ProtectedRoute>
 );
@@ -44,7 +46,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/tech" element={<TechLogin />} />
-        <Route path="/tech/dashboard" element={<ProtectedRoute><TechDashboard /></ProtectedRoute>} />
+        <Route path="/tech/dashboard" element={<ProtectedRoute requireRole="tech"><TechDashboard /></ProtectedRoute>} />
         <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
         <Route path="/technicians" element={<AdminLayout><TechniciansPage /></AdminLayout>} />
         <Route path="/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
