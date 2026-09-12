@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
       subscription: {
         plan: 'starter',
         techLimit: 10,
-        jobLimit: 100,
+        jobLimit: null,
         status: 'trialing',
         trialEndsAt: Timestamp.fromDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
         stripeCustomerId: '',
@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }) => {
           const defaultSub = {
             plan: 'starter',
             techLimit: 10,
-            jobLimit: 100,
+            jobLimit: null,
             status: 'active',
             stripeCustomerId: '',
             stripeSubscriptionId: ''

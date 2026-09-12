@@ -9,10 +9,10 @@ export const PLANS = {
     price: 99,
     priceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID,
     techLimit: 10,
-    jobLimit: 200,
+    jobLimit: null, // unlimited — see canCreateJob
     features: [
       'Up to 10 technicians',
-      'Up to 200 jobs/month',
+      'Unlimited jobs',
       'Real-time dispatch board',
       'Technician mobile dashboard',
       'Basic reporting',
@@ -25,10 +25,10 @@ export const PLANS = {
     price: 149,
     priceId: import.meta.env.VITE_STRIPE_GROWTH_PRICE_ID,
     techLimit: 20,
-    jobLimit: 400,
+    jobLimit: null, // unlimited — see canCreateJob
     features: [
       'Up to 20 technicians',
-      'Up to 400 jobs/month',
+      'Unlimited jobs',
       'Everything in Starter',
       'Advanced reporting',
       'Priority email support',
@@ -42,10 +42,10 @@ export const PLANS = {
     price: 225,
     priceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID,
     techLimit: 40,
-    jobLimit: 800,
+    jobLimit: null, // unlimited — see canCreateJob
     features: [
       'Up to 40 technicians',
-      'Up to 800 jobs/month',
+      'Unlimited jobs',
       'Everything in Growth',
       'API access',
       'Phone support',
@@ -64,8 +64,25 @@ export const canAddTechnician = (currentPlan, currentTechCount) => {
   return currentTechCount < plan.techLimit;
 };
 
+/**
+ * Jobs are no longer capped; plans are priced on technicians.
+ *
+ * The old caps were 200/400/800 against tech limits of 10/20/40 — a flat 20
+ * jobs per technician per month at every tier, or under one job per tech per
+ * working day. A real HVAC, plumbing or electrical tech runs 4-8 calls a day,
+ * so a full Starter crew would have hit the cap in about four working days and
+ * then been unable to create jobs while still paying. Upgrading did not help,
+ * because the per-tech allowance was identical on every plan.
+ *
+ * The caps also protected nothing: a job document is a few kilobytes, and the
+ * Firestore free tier alone covers orders of magnitude more than 800 a month.
+ *
+ * `jobLimit: null` means unlimited. Keep the field rather than deleting it so
+ * a future abuse guard has somewhere to live.
+ */
 export const canCreateJob = (currentPlan, currentMonthJobCount) => {
   const plan = getPlanById(currentPlan);
+  if (!plan || plan.jobLimit == null) return true;
   return currentMonthJobCount < plan.jobLimit;
 };
 

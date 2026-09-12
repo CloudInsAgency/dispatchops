@@ -126,12 +126,17 @@ const BillingPage = () => {
           <div>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-600">Jobs this month</span>
-              <span className="font-medium">{monthlyJobCount} / {planDetails?.jobLimit || 200}</span>
+              <span className="font-medium">
+                {planDetails?.jobLimit == null ? monthlyJobCount : `${monthlyJobCount} / ${planDetails.jobLimit}`}
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className={`h-2 rounded-full transition-all ${(monthlyJobCount / (planDetails?.jobLimit || 200)) >= 0.9 ? 'bg-red-500' : 'bg-primary-600'}`} style={{ width: `${Math.min((monthlyJobCount / (planDetails?.jobLimit || 200)) * 100, 100)}%` }} />
+              <div
+                className={`h-2 rounded-full transition-all ${planDetails?.jobLimit != null && (monthlyJobCount / planDetails.jobLimit) >= 0.9 ? 'bg-red-500' : 'bg-primary-600'}`}
+                style={{ width: planDetails?.jobLimit == null ? '100%' : `${Math.min((monthlyJobCount / planDetails.jobLimit) * 100, 100)}%` }}
+              />
             </div>
-            {(monthlyJobCount / (planDetails?.jobLimit || 200)) >= 0.9 && <p className="text-xs text-red-500 mt-1">Approaching limit</p>}
+            {planDetails?.jobLimit != null && (monthlyJobCount / planDetails.jobLimit) >= 0.9 && <p className="text-xs text-red-500 mt-1">Approaching limit</p>}
           </div>
         </div>
       </div>
@@ -161,7 +166,7 @@ const BillingPage = () => {
                 <p className="text-2xl font-bold text-gray-900 mt-2">${plan.price}<span className="text-sm font-normal text-gray-500">/month</span></p>
                 <ul className="mt-4 space-y-2">
                   <li className="text-sm text-gray-600 flex items-center gap-2"><FiCheck className="h-4 w-4 text-green-500" /> Up to {plan.techLimit} technicians</li>
-                  <li className="text-sm text-gray-600 flex items-center gap-2"><FiCheck className="h-4 w-4 text-green-500" /> Up to {plan.jobLimit} jobs/month</li>
+                  <li className="text-sm text-gray-600 flex items-center gap-2"><FiCheck className="h-4 w-4 text-green-500" /> {plan.jobLimit == null ? 'Unlimited jobs' : `Up to ${plan.jobLimit} jobs/month`}</li>
                   {plan.features.slice(2).map((f, i) => (
                     <li key={i} className="text-sm text-gray-600 flex items-center gap-2"><FiCheck className="h-4 w-4 text-green-500" /> {f}</li>
                   ))}

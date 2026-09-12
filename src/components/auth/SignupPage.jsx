@@ -64,7 +64,7 @@ const SignupPage = () => {
         subscription: {
           plan: 'starter',
           techLimit: 10,
-          jobLimit: 100,
+          jobLimit: null,
           status: 'active',
           stripeCustomerId: '',
           stripeSubscriptionId: '',

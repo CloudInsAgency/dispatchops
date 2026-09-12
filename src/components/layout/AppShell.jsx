@@ -69,7 +69,14 @@ const AppShell = ({ children }) => {
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-gray-500">Jobs this month</span>
-                <span className="font-medium text-gray-700">{monthlyJobCount}/{planDetails?.jobLimit || 200}</span>
+                {/* No denominator when jobs are uncapped — "0/200" implied a
+                    ceiling that no longer exists and made the number look
+                    like a budget being spent. */}
+                <span className="font-medium text-gray-700">
+                  {planDetails?.jobLimit == null
+                    ? monthlyJobCount
+                    : `${monthlyJobCount}/${planDetails.jobLimit}`}
+                </span>
               </div>
             </div>
           </div>

@@ -164,8 +164,10 @@ const CreateJobModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const jobsRemaining = (planDetails?.jobLimit || 200) - monthlyJobCount;
-  const isNearLimit = jobsRemaining <= 20 && jobsRemaining > 0;
+  // jobLimit === null means uncapped, so there is nothing to warn about.
+  const uncapped = planDetails?.jobLimit == null;
+  const jobsRemaining = uncapped ? Infinity : planDetails.jobLimit - monthlyJobCount;
+  const isNearLimit = !uncapped && jobsRemaining <= 20 && jobsRemaining > 0;
   const upgradePlan = getRecommendedUpgrade(currentPlan);
   const upgradePlanDetails = upgradePlan ? getPlanById(upgradePlan) : null;
 
@@ -177,7 +179,9 @@ const CreateJobModal = ({ isOpen, onClose }) => {
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Create New Job</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {monthlyJobCount}/{planDetails?.jobLimit || 200} jobs this month
+                {uncapped
+                  ? `${monthlyJobCount} job${monthlyJobCount === 1 ? '' : 's'} this month`
+                  : `${monthlyJobCount}/${planDetails.jobLimit} jobs this month`}
               </p>
             </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
@@ -194,7 +198,7 @@ const CreateJobModal = ({ isOpen, onClose }) => {
                 </p>
                 {upgradePlanDetails && (
                   <p className="text-xs text-yellow-700 mt-1">
-                    Upgrade to {upgradePlanDetails.name} for up to {upgradePlanDetails.jobLimit} jobs/month
+                    Upgrade to {upgradePlanDetails.name} for up to {upgradePlanDetails.techLimit} technicians
                   </p>
                 )}
               </div>
@@ -206,7 +210,7 @@ const CreateJobModal = ({ isOpen, onClose }) => {
               <FiAlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-red-800">
-                  Monthly job limit reached ({planDetails?.jobLimit || 200} jobs)
+                  Monthly job limit reached ({planDetails?.jobLimit} jobs)
                 </p>
                 <p className="text-xs text-red-700 mt-1">
                   Upgrade your plan to create more jobs this month.
@@ -466,7 +470,7 @@ const CreateJobModal = ({ isOpen, onClose }) => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         currentPlan={currentPlan}
-        reason={`You've reached your monthly limit of ${planDetails?.jobLimit || 200} jobs on the ${planDetails?.name}. Upgrade to create more jobs.`}
+        reason={`You've reached your monthly limit of ${planDetails?.jobLimit} jobs on the ${planDetails?.name}. Upgrade to create more jobs.`}
       />
     </>
   );

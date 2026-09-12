@@ -69,7 +69,7 @@ const UpgradeModal = ({ isOpen, onClose, currentPlan, targetPlan, userId, compan
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Current Plan</p>
             <p className="text-lg font-bold text-gray-900">{PLANS[currentPlan]?.name || 'Starter Plan'}</p>
-            <p className="text-sm text-gray-600">Up to {PLANS[currentPlan]?.techLimit || 10} technicians &bull; Up to {PLANS[currentPlan]?.jobLimit || 200} jobs/month</p>
+            <p className="text-sm text-gray-600">Up to {PLANS[currentPlan]?.techLimit || 10} technicians &bull; Unlimited jobs</p>
           </div>
 
           <div className="border-2 border-primary-600 rounded-xl p-6 mb-6 bg-primary-50">
