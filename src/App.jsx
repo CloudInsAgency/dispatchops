@@ -15,6 +15,7 @@ import AppShell from './components/layout/AppShell';
 import SettingsPage from './components/settings/SettingsPage';
 import BillingPage from './components/billing/BillingPage';
 import ReportsPage from './components/reports/ReportsPage';
+import LiveMapPage from './components/map/LiveMapPage';
 import HelpCenterPage from './components/pages/HelpCenterPage';
 import ContactPage from './components/pages/ContactPage';
 import SystemStatusPage from './components/pages/SystemStatusPage';
@@ -52,6 +53,7 @@ function App() {
         <Route path="/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
         <Route path="/billing" element={<AdminLayoutNoGate><BillingPage /></AdminLayoutNoGate>} />
             <Route path="/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
+        <Route path="/map" element={<AdminLayout><LiveMapPage /></AdminLayout>} />
         <Route path="/dispatch" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dispatch/technicians" element={<Navigate to="/technicians" replace />} />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingFlow /></ProtectedRoute>} />

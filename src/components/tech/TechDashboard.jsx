@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import LocationConsent from './LocationConsent';
+import { capturePosition, CONSENT_FIELD, STATUS_LABEL } from '../../utils/geo';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, onSnapshot, doc as firestoreDoc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../../config/firebase';
@@ -10,6 +12,7 @@ import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 const TechDashboard = () => {
   const { userProfile, logout } = useAuth();
+  const [consentDismissed, setConsentDismissed] = useState(false);
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -312,6 +315,27 @@ const TechDashboard = () => {
           userName: userProfile.fullName || 'Technician', timestamp: new Date()
         })
       };
+      // One position fix per status change, only with consent. Awaited
+      // before the write so the breadcrumb lands with the status it belongs
+      // to; capturePosition resolves null on refusal or timeout, so a tech
+      // can always update status even with location off or no signal.
+      if (userProfile?.[CONSENT_FIELD] && STATUS_LABEL[newStatus]) {
+        const fix = await capturePosition();
+        if (fix) {
+          updateData.locationTrail = arrayUnion({
+            status: newStatus,
+            label: STATUS_LABEL[newStatus],
+            lat: fix.lat,
+            lng: fix.lng,
+            accuracy: fix.accuracy,
+            at: fix.at,
+            techName: userProfile.fullName || 'Technician',
+            techUid: userProfile.uid || null,
+          });
+          updateData.lastKnownLocation = { ...fix, status: newStatus };
+        }
+      }
+
       if (newStatus === 'en_route') updateData.enRouteAt = new Date();
       else if (newStatus === 'in_progress') { updateData.startedAt = new Date(); startTimer(jobId); }
       else if (newStatus === 'completed') {
@@ -412,6 +436,17 @@ const TechDashboard = () => {
         {pullDistance >= PULL_THRESHOLD && !refreshing && <span className="ml-2 text-sm text-primary-600 font-medium">Release to refresh</span>}
         {refreshing && <span className="ml-2 text-sm text-primary-600 font-medium">Refreshing...</span>}
       </div>
+
+      {/* Asked once. `locationConsent` is undefined until answered either way,
+          so declining is remembered and the card does not come back. */}
+      {userProfile && userProfile[CONSENT_FIELD] === undefined && !consentDismissed && (
+        <div className="pt-4">
+          <LocationConsent
+            uid={userProfile.uid}
+            onDecision={() => setConsentDismissed(true)}
+          />
+        </div>
+      )}
 
       <div ref={scrollContainerRef} className="p-4 space-y-4 pb-20"
         onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
