@@ -1,0 +1,47 @@
+# Cloud Dispatch Ops — https://www.clouddispatchops.com
+
+# Search engines: everything public is fair game.
+User-agent: *
+Allow: /
+
+# Signed-in and transactional areas. Nothing here is useful in a search
+# result, and some of it is per-account, so keep it out of the index.
+Disallow: /dashboard
+Disallow: /jobs
+Disallow: /technicians
+Disallow: /reports
+Disallow: /settings
+Disallow: /billing
+Disallow: /subscription
+Disallow: /onboarding
+Disallow: /tech
+Disallow: /debug
+
+# AI answer engines are a real discovery channel for B2B software — buyers
+# ask them "best dispatch software for a small HVAC company". Explicitly
+# allowed so there is no ambiguity for crawlers that check.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://www.clouddispatchops.com/sitemap.xml
