@@ -11,8 +11,19 @@ import toast from 'react-hot-toast';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 const TechDashboard = () => {
-  const { userProfile, logout } = useAuth();
+  const { userProfile, logout, loadUserProfile, currentUser } = useAuth();
   const [consentDismissed, setConsentDismissed] = useState(false);
+  /**
+   * Consent held in component state as well as on the profile.
+   *
+   * `userProfile` is fetched once with getDoc when auth settles — it is not a
+   * live listener. So granting consent wrote `locationConsent: true` to
+   * Firestore while the in-memory profile still said undefined, and the very
+   * next status change skipped capture. Consent was on in the database and
+   * off in the running app. This mirrors it locally so it takes effect
+   * immediately, and the profile is refetched so it survives a remount.
+   */
+  const [locationOn, setLocationOn] = useState(false);
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +135,11 @@ const TechDashboard = () => {
     }
     setIsPulling(false);
   }, [pullDistance]);
+
+  useEffect(() => {
+    if (userProfile?.[CONSENT_FIELD] === true) setLocationOn(true);
+    if (userProfile?.[CONSENT_FIELD] === false) setLocationOn(false);
+  }, [userProfile]);
 
   useEffect(() => {
     const fetchCompanyName = async () => {
@@ -319,7 +335,7 @@ const TechDashboard = () => {
       // before the write so the breadcrumb lands with the status it belongs
       // to; capturePosition resolves null on refusal or timeout, so a tech
       // can always update status even with location off or no signal.
-      if (userProfile?.[CONSENT_FIELD] && STATUS_LABEL[newStatus]) {
+      if (locationOn && STATUS_LABEL[newStatus]) {
         const fix = await capturePosition();
         if (fix) {
           updateData.locationTrail = arrayUnion({
@@ -333,6 +349,10 @@ const TechDashboard = () => {
             techUid: userProfile.uid || null,
           });
           updateData.lastKnownLocation = { ...fix, status: newStatus };
+        } else {
+          // Consent is on but no fix came back — denied at the OS level, no
+          // signal, or timed out. Say so rather than silently dropping it.
+          toast('Status saved, but your location could not be read.', { icon: '📍' });
         }
       }
 
@@ -405,6 +425,13 @@ const TechDashboard = () => {
                 <h1 className="text-xl font-bold">Cloud Dispatch Ops</h1>
                 <p className="text-xs text-primary-100">{userProfile?.fullName || 'Technician'}</p>
                 {companyName && <p className="text-xs text-primary-200 mt-0.5">{companyName}</p>}
+                {/* Whether location will be captured should never be a guess.
+                    It was invisible before, so a silent skip looked identical
+                    to a working capture. */}
+                <p className="text-[11px] mt-1 flex items-center gap-1 text-primary-100">
+                  <FiMapPin className="h-3 w-3" />
+                  {locationOn ? 'Location sharing on' : 'Location sharing off'}
+                </p>
               </div>
             </div>
             <button onClick={handleLogout} className="flex items-center bg-primary-700 px-4 py-2 rounded-lg hover:bg-primary-800 transition">
@@ -443,7 +470,12 @@ const TechDashboard = () => {
         <div className="pt-4">
           <LocationConsent
             uid={userProfile.uid}
-            onDecision={() => setConsentDismissed(true)}
+            onDecision={(granted) => {
+              setConsentDismissed(true);
+              if (granted === true) setLocationOn(true);
+              if (granted === false) setLocationOn(false);
+              if (currentUser) loadUserProfile(currentUser);
+            }}
           />
         </div>
       )}
