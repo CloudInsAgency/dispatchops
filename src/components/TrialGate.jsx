@@ -27,6 +27,23 @@ const TrialGate = ({ children }) => {
   const subscription = userProfile?.subscription;
   const companyStatus = userProfile?.company?.subscriptionStatus;
 
+  /*
+   * Normalise the status before comparing anything.
+   *
+   * The webhook writes Stripe's value verbatim, and STRIPE SPELLS IT
+   * "canceled" WITH ONE L. This file checked for "cancelled" with two, so the
+   * customer.subscription.updated event that fires the moment someone cancels
+   * never matched, fell through to the default allow at the bottom, and left
+   * them with full access indefinitely.
+   *
+   * Everything except trialing and active must block. past_due and unpaid are
+   * the common real-world cases — a card expires, the renewal fails, and the
+   * account previously kept working for free forever.
+   */
+  const raw = String(subscription?.status || companyStatus || '').toLowerCase();
+  const status = raw === 'canceled' ? 'cancelled' : raw;
+  const BLOCKING = ['cancelled', 'past_due', 'unpaid', 'incomplete_expired', 'paused'];
+
   // Active paid subscription — always allow
   if (subscription?.status === 'active' && subscription?.stripeSubscriptionId) {
     return children;
@@ -91,8 +108,8 @@ const TrialGate = ({ children }) => {
     return children;
   }
 
-  // Cancelled subscription — block access
-  if (subscription?.status === 'cancelled' || companyStatus === 'cancelled') {
+  // Cancelled, unpaid or lapsed — block access
+  if (BLOCKING.includes(status)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 text-center">
@@ -109,7 +126,8 @@ const TrialGate = ({ children }) => {
               onClick={() => navigate('/billing')}
               className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition flex items-center justify-center gap-2"
             >
-              <FiCreditCard className="h-5 w-5" /> Resubscribe
+              <FiCreditCard className="h-5 w-5" />
+              {status === 'past_due' || status === 'unpaid' ? 'Update Payment' : 'Resubscribe'}
             </button>
             <button
               onClick={async () => { await logout(); navigate('/'); }}
@@ -129,8 +147,52 @@ const TrialGate = ({ children }) => {
     );
   }
 
-  // Default: allow access (covers edge cases, users with no subscription data yet)
-  return children;
+  /*
+   * Only a genuinely absent subscription falls through to access — that is an
+   * account part-way through signup, before the trial record is written, and
+   * locking it out would break onboarding.
+   *
+   * Anything with a subscription object but an unrecognised status is blocked.
+   * This used to allow access, which meant every Stripe status this file did
+   * not name explicitly was free service.
+   */
+  if (!subscription && !companyStatus) {
+    return children;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8 text-center">
+        <div className="bg-yellow-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-6">
+          <FiAlertTriangle className="h-8 w-8 text-yellow-600" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-3">Subscription Needs Attention</h1>
+        <p className="text-gray-600 mb-8">
+          We could not confirm an active subscription on this account. Choose a
+          plan to continue, or contact support if you believe this is a mistake.
+        </p>
+        <div className="space-y-3">
+          <button
+            onClick={() => navigate('/billing')}
+            className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition flex items-center justify-center gap-2"
+          >
+            <FiCreditCard className="h-5 w-5" /> Choose a Plan
+          </button>
+          <button
+            onClick={async () => { await logout(); navigate('/'); }}
+            className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2"
+          >
+            <FiLogOut className="h-5 w-5" /> Sign Out
+          </button>
+        </div>
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <strong>Your data is safe.</strong> Technicians, jobs and settings are all preserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default TrialGate;

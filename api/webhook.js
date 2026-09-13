@@ -93,7 +93,11 @@ async function handleCheckoutComplete(session) {
 }
 
 async function handleSubscriptionUpdate(subscription) {
-  const { customer, status } = subscription;
+  const { customer } = subscription;
+  // Stripe sends "canceled" with one l; the app reads "cancelled" with two.
+  // Normalise on write so Firestore never holds both spellings for the same
+  // state — that mismatch previously left cancelled customers with access.
+  const status = subscription.status === 'canceled' ? 'cancelled' : subscription.status;
   const snapshot = await db.collection('users').where('stripeCustomerId', '==', customer).get();
   if (!snapshot.empty) {
     const userDoc = snapshot.docs[0];
