@@ -169,7 +169,7 @@ const LandingPage = () => {
               This is the whole job, start to finish
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Three screens. No modules to buy, no implementation call.
+              Four screens. No modules to buy, no implementation call.
             </p>
           </div>
 
@@ -207,12 +207,33 @@ const LandingPage = () => {
             </figure>
           </div>
 
+          {/* Location. Real UI, sample data — a genuine capture would publish a
+              real technician's name and their actual coordinates. */}
+          <div className="mt-10 lg:mt-12 max-w-5xl mx-auto">
+            <Shot
+              src="/shot-map.jpg"
+              alt="The dispatch board map panel, showing two technicians' routes for the day with pins marking where each job was marked en route, arrived and completed."
+              width="1800"
+              height="732"
+            />
+            <div className="mt-5 max-w-2xl">
+              <h3 className="text-lg font-bold text-gray-900">3. See where the crew actually went</h3>
+              <p className="mt-1.5 text-[15px] text-gray-600 leading-relaxed">
+                A position is recorded the moment a technician marks a job en route,
+                arrived or complete — so when a customer rings asking where their
+                engineer is, you answer from the screen instead of ringing the van.
+                It is not constant tracking: nothing is recorded between jobs, and
+                each technician opts in.
+              </p>
+            </div>
+          </div>
+
           <div className="mt-10 lg:mt-12 max-w-5xl mx-auto">
             <div className="rounded-xl bg-brand-navy px-8 py-10 sm:px-12 sm:py-12 text-white">
               <div className="max-w-2xl">
                 <FiTruck className="h-9 w-9 text-brand-amber mb-5" />
                 <h3 className="text-2xl sm:text-3xl font-bold leading-snug tracking-tight">
-                  3. Then drag it across the board
+                  4. Then drag it across the board
                 </h3>
                 <p className="mt-4 text-[15px] sm:text-base text-blue-100 leading-relaxed">
                   Unassigned to Scheduled to En Route to In Progress. The technician sees
@@ -247,7 +268,7 @@ const LandingPage = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { icon: FiTruck, title: 'Real-Time Job Board', desc: 'See every job and its status at a glance. Drag-and-drop to assign.' },
-              { icon: FiUsers, title: 'Technician Management', desc: 'Track each technician’s location, status and daily performance.' },
+              { icon: FiUsers, title: 'Technician Management', desc: 'See where each technician was at every job status change, plus daily performance.' },
               { icon: FiSmartphone, title: 'Mobile App for Techs', desc: 'Technicians update job status with one tap. No more phone calls.' },
               { icon: FiClock, title: 'Time Tracking', desc: 'Automatic tracking of travel time, job duration and completion.' },
               { icon: FiBarChart2, title: 'Daily Reports', desc: 'Completion rates, technician utilisation, average job times.' },
