@@ -15,9 +15,12 @@ const UpgradeModal = ({ isOpen, onClose, currentPlan, targetPlan, userId, compan
     const loadingToast = toast.loading('Redirecting to checkout...');
     try {
       const stripe = await stripePromise;
-      const apiUrl = import.meta.env.DEV
-        ? 'http://localhost:5173/api/create-checkout-session'
-        : 'https://dispatchops-three.vercel.app/api/create-checkout-session';
+      // Relative path, so the call always lands on whatever origin is
+      // serving the app. These were pinned to dispatchops-three.vercel.app,
+      // an old preview deployment — which still answers, so checkout appeared
+      // to work while sending the customer back to a host they are not
+      // signed in to.
+      const apiUrl = '/api/create-checkout-session';
 
       const response = await fetch(apiUrl, {
         method: 'POST',

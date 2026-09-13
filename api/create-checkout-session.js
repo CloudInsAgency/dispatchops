@@ -25,12 +25,20 @@ module.exports = async (req, res) => {
       }
     }
 
+    // Derive the return host from the request rather than a build-time
+    // constant. This fell back to dispatchops-three.vercel.app, an old
+    // preview deployment, so a customer who paid was redirected to a host
+    // they are not signed in to and saw a login screen instead of a receipt.
+    const origin =
+      req.headers.origin ||
+      (req.headers.host ? `https://${req.headers.host}` : 'https://www.clouddispatchops.com');
+
     const sessionConfig = {
       payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.VITE_APP_URL || 'https://dispatchops-three.vercel.app'}/billing?session_id={CHECKOUT_SESSION_ID}&success=true`,
-      cancel_url: `${process.env.VITE_APP_URL || 'https://dispatchops-three.vercel.app'}/billing?cancelled=true`,
+      success_url: `${origin}/billing?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      cancel_url: `${origin}/billing?cancelled=true`,
       metadata: { planId, userId: userId || '', companyId: companyId || '' },
     };
 

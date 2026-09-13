@@ -9,7 +9,7 @@ const faqs = [
     { q: 'How do I add my first technician?', a: 'Go to the Technicians page from the sidebar, click "+ Add Technician", fill in their name, email, and phone number. A login account is automatically created with a temporary password that you can share with them.' },
   ]},
   { category: 'Technician Management', icon: FiUsers, items: [
-    { q: 'How do technicians log in?', a: 'Technicians log in at dispatchops-three.vercel.app/tech using the email and password created when you added them. You can copy the login URL from the Technicians page.' },
+    { q: 'How do technicians log in?', a: 'Technicians log in at clouddispatchops.com/tech using the email and password created when you added them. You can copy the login URL from the Technicians page.' },
     { q: 'What if a technician forgets their password?', a: 'Technicians can click "Forgot your password?" on the login page. A reset link will be sent to their email address so they can set a new password.' },
     { q: 'How do I remove a technician?', a: 'Go to the Technicians page, find the technician in the list, and click the delete (trash) icon. This will remove them from your company roster.' },
   ]},
@@ -28,7 +28,7 @@ const faqs = [
     { q: 'How do I cancel my subscription?', a: 'Go to the Billing page and click "Manage Subscription" to access the Stripe Customer Portal where you can cancel, update payment methods, or view invoices.' },
   ]},
   { category: 'Mobile & Tech Portal', icon: FiSmartphone, items: [
-    { q: 'Is there a mobile app?', a: 'Technicians access their dashboard through a mobile-optimized web portal at dispatchops-three.vercel.app/tech. It works on any smartphone browser — no app download needed.' },
+    { q: 'Is there a mobile app?', a: 'Technicians access their dashboard through a mobile-optimized web portal at clouddispatchops.com/tech. It works on any smartphone browser — no app download needed.' },
     { q: 'What can technicians do from their portal?', a: 'Technicians can view assigned jobs, update job status (En Route, In Progress, Completed), see customer details and addresses, and manage their availability.' },
   ]},
 ];

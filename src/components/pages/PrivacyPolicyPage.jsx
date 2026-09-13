@@ -20,7 +20,7 @@ const PrivacyPolicyPage = () => {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-        <p className="text-gray-500 mb-8">Last Updated: February 3, 2026</p>
+        <p className="text-gray-500 mb-8">Last Updated: September 13, 2026</p>
 
         <div className="bg-white rounded-xl shadow-lg p-8 md:p-12 prose prose-gray max-w-none">
           <h2 className="text-xl font-bold text-gray-900 mt-0">1. Introduction</h2>
@@ -31,6 +31,17 @@ const PrivacyPolicyPage = () => {
           <p><strong>Business Data:</strong> We collect information you enter into the platform including technician details, job information, customer names, addresses, phone numbers, and service records.</p>
           <p><strong>Payment Information:</strong> Payment processing is handled securely by Stripe. We do not store credit card numbers on our servers. We retain Stripe customer IDs and subscription status.</p>
           <p><strong>Usage Data:</strong> We collect information about how you interact with our platform, including pages visited, features used, and timestamps.</p>
+
+          <p><strong>Technician Location Data (optional):</strong> If a technician
+          chooses to turn on location sharing, we record their device's approximate
+          GPS coordinates and accuracy <em>only at the moment they mark a job as
+          en route, arrived, or complete</em> — at most three points per job. We do
+          not track technicians continuously, we do not record location between
+          jobs, and nothing is recorded while the technician's app is closed.
+          Location sharing is off by default, requires explicit opt-in, and a
+          technician may decline or withdraw consent at any time without losing
+          access to any other part of the app. These points are visible to the
+          company owner who employs that technician, and to no one else.</p>
 
           <h2 className="text-xl font-bold text-gray-900">3. How We Use Your Information</h2>
           <p>We use the collected information to: provide and maintain our service, process your subscription and payments, communicate with you about your account, improve our platform and user experience, send important service updates, and comply with legal obligations.</p>
@@ -45,7 +56,7 @@ const PrivacyPolicyPage = () => {
           <p>You have the right to: access your personal data, correct inaccurate data, request deletion of your data, export your data (via CSV exports), and opt out of non-essential communications.</p>
 
           <h2 className="text-xl font-bold text-gray-900">7. Data Retention</h2>
-          <p>We retain your data for as long as your account is active. Upon account deletion, we will remove your data within 30 days, except where retention is required by law.</p>
+          <p>We retain your data for as long as your account is active. Upon account deletion, we will remove your data within 30 days, except where retention is required by law. Technician location points are stored with the job they belong to and are removed when that job or the account is deleted.</p>
 
           <h2 className="text-xl font-bold text-gray-900">8. Cookies</h2>
           <p>We use essential cookies for authentication and session management. We do not use advertising or tracking cookies.</p>
