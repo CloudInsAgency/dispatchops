@@ -1,4 +1,13 @@
-const stripe = require('stripe')(process.env.VITE_STRIPE_SECRET_KEY);
+/*
+ * ESM, not CommonJS. package.json sets "type": "module", so every .js file in
+ * this repo is an ES module — `require` and `module.exports` throw at load and
+ * Vercel returns FUNCTION_INVOCATION_FAILED before the handler ever runs.
+ * These functions were written in CommonJS, which is why checkout returned 500
+ * for every customer who tried to pay.
+ */
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY);
 
 /**
  * Stripe Billing Portal session.
@@ -10,7 +19,7 @@ const stripe = require('stripe')(process.env.VITE_STRIPE_SECRET_KEY);
  * cancel without emailing support, which is also a requirement of Stripe's
  * own subscription rules.
  */
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -40,4 +49,4 @@ module.exports = async (req, res) => {
     console.error('Portal session error:', error);
     return res.status(500).json({ error: error.message || 'Could not open the billing portal.' });
   }
-};
+}

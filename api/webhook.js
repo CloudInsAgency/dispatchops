@@ -1,5 +1,14 @@
-const stripe = require('stripe')(process.env.VITE_STRIPE_SECRET_KEY);
-const admin = require('firebase-admin');
+/*
+ * ESM, not CommonJS. package.json sets "type": "module", so every .js file in
+ * this repo is an ES module — `require` and `module.exports` throw at load and
+ * Vercel returns FUNCTION_INVOCATION_FAILED before the handler ever runs.
+ * These functions were written in CommonJS, which is why checkout returned 500
+ * for every customer who tried to pay.
+ */
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.VITE_STRIPE_SECRET_KEY);
+import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -13,7 +22,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const sig = req.headers['stripe-signature'];
@@ -46,7 +55,7 @@ module.exports = async (req, res) => {
     console.error('Webhook handler error:', error);
     res.status(500).json({ error: error.message });
   }
-};
+}
 
 async function handleCheckoutComplete(session) {
   const { customer, subscription, metadata } = session;
