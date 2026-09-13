@@ -119,9 +119,9 @@ const LandingPage = () => {
             <div className="relative mx-auto max-w-6xl">
               <Shot
                 src="/shot-board.jpg"
-                alt="The Cloud Dispatch Ops dispatch board, showing jobs grouped into Unassigned, Scheduled, En Route and In Progress columns alongside the technician list and the day's totals."
+                alt="The Cloud Dispatch Ops dispatch board: the day's totals, a map of where each technician has been today, and jobs grouped into Unassigned, Scheduled, En Route and In Progress columns."
                 width="1800"
-                height="785"
+                height="1119"
                 priority
               />
             </div>
